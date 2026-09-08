@@ -1,0 +1,28 @@
+info:
+  name: Create Event
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: http://localhost:3000/events
+  body:
+    type: json
+    data: |-
+      {
+        "title": "NestJS Workshop 2",
+        "description": "A practical backend development workshop",
+        "startDate": "2026-10-10T10:00:00.000Z",
+        "endDate": "2026-10-10T16:00:00.000Z",
+        "availableSeats": 100,
+        "price": 49.99,
+        "tags": ["nestjs", "backend", "workshop"]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
