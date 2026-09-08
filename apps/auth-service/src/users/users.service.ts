@@ -21,13 +21,13 @@ export class UsersService {
       throw new ConflictException('Email already registered');
     }
 
-    const user = await this.userModel.create({
-      name: data.name,
-      email: data.email.toLowerCase(),
-      password: data.password,
-    });
+      const user = await this.userModel.create({
+        name: data.name,
+        email: data.email.toLowerCase(),
+        password: data.password,
+      });
 
-    return user;
+      return user;
   }
 
   async findByEmail(email: string) {

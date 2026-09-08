@@ -1,7 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { EventServiceModule } from './event-service.module';
 import { Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
+import * as dotenv from 'dotenv';
+import { EventServiceModule } from './event-service.module';
+import { MicroserviceExceptionFilter } from '@app/common';
+
+dotenv.config({ path: 'apps/event-service/.env' });
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(EventServiceModule, {
@@ -13,6 +17,7 @@ async function bootstrap() {
     },
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalFilters(new MicroserviceExceptionFilter());
   await app.listen();
 }
 await bootstrap();

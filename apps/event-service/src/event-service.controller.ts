@@ -30,4 +30,14 @@ export class EventServiceController {
   findOne(@Payload() data: { eventId: string }) {
     return this.eventsService.findOne(data.eventId);
   }
+
+  @MessagePattern('events.reserve-seats')
+  reserveSeats(@Payload() data: { eventId: string; count: number }) {
+    return this.eventsService.reserveSeats(data.eventId, data.count);
+  }
+
+  @MessagePattern('events.release-seats')
+  releaseSeats(@Payload() data: { eventId: string; count: number }) {
+    return this.eventsService.releaseSeats(data.eventId, data.count);
+  }
 }

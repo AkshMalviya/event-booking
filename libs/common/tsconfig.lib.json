@@ -3,8 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "declaration": true,
-    "rootDir": "./src",
-    "outDir": "../../dist/apps/event-booking"
+    "outDir": "../../dist/libs/common"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

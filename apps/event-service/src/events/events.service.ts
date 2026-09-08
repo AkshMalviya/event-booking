@@ -45,4 +45,29 @@ export class EventsService {
   findOne(eventId: string) {
     return this.eventModel.findById(eventId).exec();
   }
+
+  async reserveSeats(eventId: string, count: number) {
+    return this.eventModel
+      .findOneAndUpdate(
+        {
+          _id: eventId,
+          $expr: {
+            $lte: [{ $add: ['$registeredCount', count] }, '$availableSeats'],
+          },
+        },
+        { $inc: { registeredCount: count } },
+        { new: true },
+      )
+      .exec();
+  }
+
+  async releaseSeats(eventId: string, count: number) {
+    return this.eventModel
+      .findByIdAndUpdate(
+        eventId,
+        { $inc: { registeredCount: -count } },
+        { new: true },
+      )
+      .exec();
+  }
 }

@@ -25,12 +25,20 @@
     "strict": true,
     "strictPropertyInitialization": false,
 
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "baseUrl": "./",
+    "paths": {
+      "@app/common": ["libs/common/src"],
+      "@app/common/*": ["libs/common/src/*"]
+    }
   },
 
   "files": [],
 
   "references": [
+    {
+      "path": "./libs/common/tsconfig.lib.json"
+    },
     {
       "path": "./apps/api-gateway/tsconfig.app.json"
     },

@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  HttpException
 } from '@nestjs/common';
 
 import { JwtService } from '@nestjs/jwt';
@@ -19,7 +20,7 @@ export class AuthService {
     const existingUser = await this.usersService.findByEmail(data.email);
 
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new HttpException('Email already registered',400);
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);

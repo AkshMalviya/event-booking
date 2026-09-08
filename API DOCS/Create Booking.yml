@@ -1,18 +1,17 @@
 info:
-  name: Sign Up
+  name: Create Booking
   type: http
-  seq: 1
+  seq: 7
 
 http:
   method: POST
-  url: http://localhost:3000/auth/register
+  url: http://localhost:3000/bookings
   body:
     type: json
     data: |-
       {
-        "name": "Aksh Malviya 1",
-        "email": "malviyaaksh@gmail.com",
-        "password": "12345678"
+        "eventId": "6a9ffc6e332989f10aef33d8",
+        "ticketsCount": 1
       }
   auth: inherit
 

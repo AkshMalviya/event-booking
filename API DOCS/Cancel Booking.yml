@@ -1,0 +1,16 @@
+info:
+  name: Cancel Booking
+  type: http
+  seq: 9
+
+http:
+  method: PATCH
+  url: http://localhost:3000/bookings/REPLACE_WITH_BOOKING_ID/cancel
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
