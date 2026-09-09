@@ -2,11 +2,14 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
-  HttpException
+  HttpException,
 } from '@nestjs/common';
 
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { SignupDto } from '@app/contracts/auth/signup.dto';
+import { LoginDto } from '@app/contracts/auth/login.dto';
+import { UserEntity } from '@app/contracts/auth/user.entity';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -16,11 +19,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(data: { name: string; email: string; password: string }) {
+  async register(data: SignupDto): Promise<UserEntity> {
     const existingUser = await this.usersService.findByEmail(data.email);
 
     if (existingUser) {
-      throw new HttpException('Email already registered',400);
+      throw new HttpException('Email already registered', 400);
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -31,13 +34,13 @@ export class AuthService {
     });
 
     return {
-      id: user._id,
+      id: user._id.toString(),
       name: user.name,
       email: user.email,
     };
   }
 
-  async login(data: { email: string; password: string }) {
+  async login(data: LoginDto) {
     const user = await this.usersService.findByEmail(data.email);
 
     if (!user) {
@@ -67,14 +70,14 @@ export class AuthService {
     };
   }
 
-  async getUser(userId: string) {
+  async getUser(userId: string): Promise<UserEntity> {
     const user = await this.usersService.findById(userId);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
     return {
-      id: user._id,
+      id: user._id.toString(),
       name: user.name,
       email: user.email,
     };

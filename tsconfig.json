@@ -30,7 +30,11 @@
     "baseUrl": "./",
     "paths": {
       "@app/common": ["libs/common/src"],
-      "@app/common/*": ["libs/common/src/*"]
+      "@app/common/*": ["libs/common/src/*"],
+      "@app/contracts": ["libs/contracts/src"],
+      "@app/contracts/*": ["libs/contracts/src/*"]
     }
-  }
+  },
+  "include": ["apps/**/*", "libs/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

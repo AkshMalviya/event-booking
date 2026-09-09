@@ -9,8 +9,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { Booking, BookingDocument, BookingStatus } from './schema/booking.schema';
-import { CreateBookingDto } from './dto/create-booking.dto';
+import { Booking, BookingDocument } from './schema/booking.schema';
+import { BookingStatus } from '@app/contracts/bookings/booking-status.enum';
+import { CreateBookingDto } from '@app/contracts/bookings/create-booking.dto';
+import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
 
 @Injectable()
 export class BookingsService {
@@ -29,7 +31,7 @@ export class BookingsService {
     const { eventId, ticketsCount } = data;
 
     const event = await firstValueFrom(
-      this.eventClient.send('events.find-one', { eventId }),
+      this.eventClient.send(EVENT_PATTERNS.FIND_ONE, { eventId }),
     );
 
     if (!event) {
@@ -45,7 +47,7 @@ export class BookingsService {
 
     // 3. Atomically reserve seats
     const reservedEvent = await firstValueFrom(
-      this.eventClient.send('events.reserve-seats', {
+      this.eventClient.send(EVENT_PATTERNS.RESERVE_SEATS, {
         eventId,
         count: ticketsCount,
       }),
@@ -119,7 +121,7 @@ export class BookingsService {
 
     // Release seats in event service
     await firstValueFrom(
-      this.eventClient.send('events.release-seats', {
+      this.eventClient.send(EVENT_PATTERNS.RELEASE_SEATS, {
         eventId: booking.eventId,
         count: booking.ticketsCount,
       }),

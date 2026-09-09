@@ -12,17 +12,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 
-type AuthenticatedRequest = Request & {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-};
+import { CreateBookingDto } from '@app/contracts/bookings/create-booking.dto';
+import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
+import { BookingEntity } from '@app/contracts/bookings/booking.entity';
+import { UserEntity } from '@app/contracts/auth/user.entity';
 
-type CreateBookingBody = {
-  eventId: string;
-  ticketsCount: number;
+type AuthenticatedRequest = Request & {
+  user: UserEntity;
 };
 
 @Controller('bookings')
@@ -34,11 +30,11 @@ export class BookingsController {
 
   @Post()
   create(
-    @Body() body: CreateBookingBody,
+    @Body() body: CreateBookingDto,
     @Req() request: AuthenticatedRequest,
   ) {
     return firstValueFrom(
-      this.bookingClient.send('bookings.create', {
+      this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.CREATE, {
         booking: body,
         userId: request.user.id,
       }),
@@ -48,7 +44,7 @@ export class BookingsController {
   @Get('my-bookings')
   findUserBookings(@Req() request: AuthenticatedRequest) {
     return firstValueFrom(
-      this.bookingClient.send('bookings.find-all-user', {
+      this.bookingClient.send<BookingEntity[]>(BOOKING_PATTERNS.FIND_ALL_USER, {
         userId: request.user.id,
       }),
     );
@@ -57,7 +53,7 @@ export class BookingsController {
   @Get(':id')
   findOne(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
     return firstValueFrom(
-      this.bookingClient.send('bookings.find-one', {
+      this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.FIND_ONE, {
         bookingId: id,
         userId: request.user.id,
       }),
@@ -67,7 +63,7 @@ export class BookingsController {
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
     return firstValueFrom(
-      this.bookingClient.send('bookings.cancel', {
+      this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.CANCEL, {
         bookingId: id,
         userId: request.user.id,
       }),

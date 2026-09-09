@@ -1,13 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { BookingStatus } from '@app/contracts/bookings/booking-status.enum';
 
 export type BookingDocument = HydratedDocument<Booking>;
-
-export enum BookingStatus {
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  PENDING = 'PENDING',
-}
 
 @Schema({
   timestamps: true,

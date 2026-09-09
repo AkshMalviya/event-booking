@@ -20,4 +20,4 @@ async function bootstrap() {
   app.useGlobalFilters(new MicroserviceExceptionFilter());
   await app.listen();
 }
-await bootstrap();
+bootstrap();

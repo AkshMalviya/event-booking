@@ -10,15 +10,12 @@ import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
-
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
+import { UserEntity } from '@app/contracts/auth/user.entity';
 
 type AuthenticatedRequest = Request & {
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  user?: UserEntity;
 };
 
 type AccessTokenPayload = {
@@ -56,7 +53,9 @@ export class AuthGuard implements CanActivate {
         await this.jwtService.verifyAsync<AccessTokenPayload>(token);
 
       request.user = await firstValueFrom(
-        this.authClient.send('auth.get-user', { userId: payload.sub }),
+        this.authClient.send<UserEntity>(AUTH_PATTERNS.GET_USER, {
+          userId: payload.sub,
+        }),
       );
 
       return true;

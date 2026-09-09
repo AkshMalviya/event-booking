@@ -1,7 +1,7 @@
 info:
   name: Logout User
   type: http
-  seq: 7
+  seq: 3
 
 http:
   method: POST
