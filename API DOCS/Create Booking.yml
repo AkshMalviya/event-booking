@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "eventId": "6a9ffc6e332989f10aef33d8",
+        "eventId": "6aa10cb444908f61f9a332e8",
         "ticketsCount": 1
       }
   auth: inherit

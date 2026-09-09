@@ -1,21 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { EventServiceService } from './event-service.service';
 import { CreateEventDto } from '@app/contracts/events/create-event.dto';
 import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
-import { EventsService } from './events/events.service';
+import { EventsService } from './events.service';
 
 @Controller()
-export class EventServiceController {
-  constructor(
-    private readonly eventServiceService: EventServiceService,
-    private readonly eventsService: EventsService,
-  ) {}
-
-  @Get()
-  getHello(): string {
-    return this.eventServiceService.getHello();
-  }
+export class EventController {
+  constructor(private readonly eventsService: EventsService) {}
 
   @MessagePattern(EVENT_PATTERNS.CREATE)
   create(@Payload() data: { event: CreateEventDto; userId: string }) {

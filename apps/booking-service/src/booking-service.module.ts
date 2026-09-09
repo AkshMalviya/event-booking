@@ -1,11 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-
-import { BookingsController } from './bookings/bookings.controller';
-import { BookingsService } from './bookings/bookings.service';
-import { Booking, BookingSchema } from './bookings/schema/booking.schema';
+import { BookingModule } from './bookings/booking.module';
 
 @Module({
   imports: [
@@ -20,27 +16,8 @@ import { Booking, BookingSchema } from './bookings/schema/booking.schema';
         uri: configService.get<string>('MONGODB_URI'),
       }),
     }),
-    MongooseModule.forFeature([
-      {
-        name: Booking.name,
-        schema: BookingSchema,
-      },
-    ]),
-  ],
-  controllers: [BookingsController],
-  providers: [
-    BookingsService,
-    {
-      provide: 'EVENT_SERVICE',
-      useFactory: () =>
-        ClientProxyFactory.create({
-          transport: Transport.TCP,
-          options: {
-            host: 'localhost',
-            port: 4002,
-          },
-        }),
-    },
+    BookingModule,
   ],
 })
 export class BookingServiceModule {}
+
