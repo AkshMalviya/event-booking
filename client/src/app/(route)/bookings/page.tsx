@@ -104,7 +104,9 @@ export default function BookingsPage() {
 
         <SegmentedControl
           value={filter}
-          onChange={(val) => setFilter(val as "all" | "ongoing" | "upcoming" | "past")}
+          onChange={(val) =>
+            setFilter(val as "all" | "ongoing" | "upcoming" | "past")
+          }
           data={[
             { label: "All Bookings", value: "all" },
             { label: "Ongoing", value: "ongoing" },
@@ -112,7 +114,8 @@ export default function BookingsPage() {
             { label: "Past", value: "past" },
           ]}
           size="md"
-          radius="md"
+          color="blue"
+          radius="lg"
         />
 
         <InfiniteScrollList<BookingItem>

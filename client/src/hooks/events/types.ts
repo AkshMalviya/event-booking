@@ -26,3 +26,13 @@ export interface CreateEventPayload {
   tags?: string[];
   image?: File | null;
 }
+
+export interface UpdateEventPayload {
+  title?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  availableSeats?: number;
+  tags?: string[];
+  image?: File | string | null;
+}

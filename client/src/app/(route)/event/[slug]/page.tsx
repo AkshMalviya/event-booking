@@ -19,6 +19,7 @@ import {
   Divider,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import { useParams, useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 import { useEventBySlugQuery } from "@/hooks/events/query/useEventBySlugQuery";
@@ -90,7 +91,6 @@ export default function EventDetailsPage() {
     );
   }
 
-  const eventId = event.id || event._id || "";
   const seatsLeft = event.availableSeats - (event.registeredCount || 0);
   const isSoldOut = seatsLeft <= 0;
   const isOrganizer = !!user.id && user.id === event.userId;
@@ -135,29 +135,45 @@ export default function EventDetailsPage() {
       return;
     }
 
-    createBookingMutation.mutate(
-      {
-        eventId,
-        ticketsCount: count,
+    modals.openConfirmModal({
+      title: "Confirm Your Booking",
+      centered: true,
+      children: (
+        <Text size="sm">
+          Are you sure you want to book <strong>{count} ticket(s)</strong> for{" "}
+          <strong>{event.title}</strong>? This will cost{" "}
+          <strong>${totalPrice}</strong>.
+        </Text>
+      ),
+      labels: { confirm: "Confirm Booking", cancel: "Cancel" },
+      confirmProps: { color: "blue" },
+      onConfirm: () => {
+        createBookingMutation.mutate(
+          {
+            eventId: event.id || event._id || "",
+            ticketsCount: count,
+          },
+          {
+            onSuccess: () => {
+              notifications.show({
+                title: "Booking Confirmed!",
+                message: `You have successfully booked ${count} ticket(s) for "${event.title}".`,
+                color: "green",
+              });
+              router.push("/bookings");
+            },
+            onError: (err) => {
+              notifications.show({
+                title: "Booking Failed",
+                message:
+                  err.message || "Failed to book tickets. Please try again.",
+                color: "red",
+              });
+            },
+          },
+        );
       },
-      {
-        onSuccess: () => {
-          notifications.show({
-            title: "Booking Confirmed!",
-            message: `You have successfully booked ${count} ticket(s) for "${event.title}".`,
-            color: "green",
-          });
-          router.push("/bookings");
-        },
-        onError: (err) => {
-          notifications.show({
-            title: "Booking Failed",
-            message: err.message || "Failed to book tickets. Please try again.",
-            color: "red",
-          });
-        },
-      },
-    );
+    });
   };
 
   return (
@@ -418,7 +434,7 @@ export default function EventDetailsPage() {
                       ? "Event Started"
                       : isSoldOut
                         ? "Sold Out"
-                        : "Confirm Booking"}
+                        : "Book Now"}
                 </Button>
               </Stack>
             </Card>

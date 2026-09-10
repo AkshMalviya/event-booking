@@ -6,6 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model, PipelineStage, Types } from 'mongoose';
 import { CreateEventDto } from '@app/contracts/events/create-event.dto';
+import { UpdateEventDto } from '@app/contracts/events/update-event.dto';
 import { Event, EventDocument } from './schema/event.schema';
 import { PaginationService } from '@app/common/services/pagination.service';
 import {
@@ -69,6 +70,61 @@ export class EventsService {
       tags: data.tags ?? [],
       registeredCount: 0,
     });
+  }
+
+  async update(eventId: string, userId: string, data: UpdateEventDto) {
+    if (!userId) {
+      throw new UnauthorizedException('Authenticated user is required');
+    }
+
+    const event = await this.eventModel.findById(eventId);
+    if (!event) {
+      throw new BadRequestException('Event not found');
+    }
+
+    if (event.userId.toString() !== userId) {
+      throw new UnauthorizedException('You can only edit your own events');
+    }
+
+    if (new Date(event.startDate) <= new Date()) {
+      throw new BadRequestException('Cannot edit ongoing or past events');
+    }
+
+    if (data.startDate) {
+      const startDate = new Date(data.startDate);
+      if (startDate <= new Date()) {
+        throw new BadRequestException('Event start date must be in the future');
+      }
+      if (data.endDate) {
+        const endDate = new Date(data.endDate);
+        if (endDate <= startDate) {
+          throw new BadRequestException('End date must be after start date');
+        }
+      } else if (new Date(event.endDate) <= startDate) {
+        throw new BadRequestException('End date must be after start date');
+      }
+    } else if (data.endDate) {
+      const endDate = new Date(data.endDate);
+      if (endDate <= new Date(event.startDate)) {
+        throw new BadRequestException('End date must be after start date');
+      }
+    }
+
+    if (data.availableSeats !== undefined) {
+      if (data.availableSeats < event.registeredCount) {
+        throw new BadRequestException(
+          `Cannot reduce seats below already registered count (${event.registeredCount})`,
+        );
+      }
+    }
+
+    // Explicitly prevent price from being updated
+    if ('price' in data) {
+      delete (data as any).price;
+    }
+
+    Object.assign(event, data);
+    return event.save();
   }
 
   findAll(query: EventQueryDto = {}) {

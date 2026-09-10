@@ -20,7 +20,9 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiImage,
+  FiEdit,
 } from "react-icons/fi";
+import Link from "next/link";
 import { EventItem } from "@/hooks/events/types";
 import { useEventBookingsQuery } from "@/hooks/events/query/useEventBookingsQuery";
 import { getImageUrl } from "@/utils/getImagePath";
@@ -91,49 +93,65 @@ const MyEventCard = ({ event }: { event: EventItem }) => {
           </Badge>
         </Box>
 
-        <Stack p="xl" style={{ flex: 1 }} gap="md">
-          <Group justify="space-between" align="flex-start" wrap="nowrap">
-            <Stack gap="xs" style={{ flex: 1 }}>
-              <Group gap="xs">
-                <Text fw={800} size="xl" lineClamp={1}>
-                  {event.title}
+        <Stack p="xl" style={{ flex: 1 }} justify="space-between" gap="md">
+          <Stack gap="xs">
+            <Group gap="xs">
+              <Text fw={800} size="xl" lineClamp={2}>
+                {event.title}
+              </Text>
+              <Badge variant="light" color="blue" size="md">
+                {event.price === 0 ? "FREE" : `$${event.price}`}
+              </Badge>
+            </Group>
+
+            <Group gap="lg">
+              <Group gap={6}>
+                <ThemeIcon variant="light" color="blue" size="sm" radius="xl">
+                  <FiCalendar size={12} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed" fw={500}>
+                  {new Date(event.startDate).toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </Text>
-                <Badge variant="light" color="blue" size="md">
-                  {event.price === 0 ? "FREE" : `$${event.price}`}
-                </Badge>
               </Group>
 
-              <Group gap="lg">
-                <Group gap={6}>
-                  <ThemeIcon variant="light" color="blue" size="sm" radius="xl">
-                    <FiCalendar size={12} />
-                  </ThemeIcon>
-                  <Text size="sm" c="dimmed" fw={500}>
-                    {new Date(event.startDate).toLocaleDateString(undefined, {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </Text>
-                </Group>
-
-                <Group gap={6}>
-                  <ThemeIcon
-                    variant="light"
-                    color="grape"
-                    size="sm"
-                    radius="xl"
-                  >
-                    <FiUsers size={12} />
-                  </ThemeIcon>
-                  <Text size="sm" c="dimmed" fw={500}>
-                    {event.registeredCount} / {event.availableSeats} Booked
-                  </Text>
-                </Group>
+              <Group gap={6}>
+                <ThemeIcon
+                  variant="light"
+                  color="grape"
+                  size="sm"
+                  radius="xl"
+                >
+                  <FiUsers size={12} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed" fw={500}>
+                  {event.registeredCount} / {event.availableSeats} Booked
+                </Text>
               </Group>
-            </Stack>
+            </Group>
+          </Stack>
 
+          <Group justify="flex-end" mt="auto">
+            <Button
+              component={Link}
+              href={`/events/${eventId}/edit`}
+              variant="light"
+              color="blue"
+              radius="xl"
+              leftSection={<FiEdit />}
+              disabled={status.label !== "Upcoming"}
+              onClick={(e) => {
+                if (status.label !== "Upcoming") {
+                  e.preventDefault();
+                }
+              }}
+            >
+              Edit Event
+            </Button>
             <Button
               variant={opened ? "light" : "filled"}
               color={opened ? "gray" : "blue"}

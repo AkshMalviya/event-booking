@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CreateEventDto } from '@app/contracts/events/create-event.dto';
+import { UpdateEventDto } from '@app/contracts/events/update-event.dto';
 import { EventQueryDto } from '@app/contracts/events/event-query.dto';
 import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
 import { EventsService } from './events.service';
@@ -12,6 +13,11 @@ export class EventController {
   @MessagePattern(EVENT_PATTERNS.CREATE)
   create(@Payload() data: { event: CreateEventDto; userId: string }) {
     return this.eventsService.create(data.event, data.userId);
+  }
+
+  @MessagePattern(EVENT_PATTERNS.UPDATE)
+  update(@Payload() data: { eventId: string; userId: string; event: UpdateEventDto }) {
+    return this.eventsService.update(data.eventId, data.userId, data.event);
   }
 
   @MessagePattern(EVENT_PATTERNS.FIND_ALL)

@@ -1,5 +1,6 @@
 export const EVENT_PATTERNS = {
   CREATE: 'events.create',
+  UPDATE: 'event.update',
   FIND_ALL: 'events.find-all',
   FIND_ONE: 'events.find-one',
   RESERVE_SEATS: 'events.reserve-seats',
