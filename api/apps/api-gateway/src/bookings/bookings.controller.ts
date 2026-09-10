@@ -7,12 +7,14 @@ import {
   Patch,
   Post,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 
 import { CreateBookingDto } from '@app/contracts/bookings/create-booking.dto';
+import { BookingQueryDto } from '@app/contracts/bookings/booking-query.dto';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
 import { BookingEntity } from '@app/contracts/bookings/booking.entity';
 import { UserEntity } from '@app/contracts/auth/user.entity';
@@ -42,10 +44,11 @@ export class BookingsController {
   }
 
   @Get('my-bookings')
-  findUserBookings(@Req() request: AuthenticatedRequest) {
+  findUserBookings(@Req() request: AuthenticatedRequest, @Query() query: BookingQueryDto) {
     return firstValueFrom(
-      this.bookingClient.send<BookingEntity[]>(BOOKING_PATTERNS.FIND_ALL_USER, {
+      this.bookingClient.send<any>(BOOKING_PATTERNS.FIND_ALL_USER, {
         userId: request.user.id,
+        query,
       }),
     );
   }

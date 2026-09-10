@@ -3,7 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import { EventServiceModule } from './event-service.module';
-import { MicroserviceExceptionFilter } from '@app/common';
+import { MicroserviceExceptionFilter } from '@app/common/filters/microservice-exception.filter';
 
 dotenv.config({ path: 'apps/event-service/.env' });
 

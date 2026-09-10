@@ -4,6 +4,7 @@ import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { Booking, BookingSchema } from './schema/booking.schema';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
+import { PaginationService } from '@app/common/services/pagination.service';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BookingsService } from './bookings.service';
   controllers: [BookingsController],
   providers: [
     BookingsService,
+    PaginationService,
     {
       provide: 'EVENT_SERVICE',
       useFactory: () =>
@@ -25,6 +27,17 @@ import { BookingsService } from './bookings.service';
           options: {
             host: 'localhost',
             port: 4002,
+          },
+        }),
+    },
+    {
+      provide: 'AUTH_SERVICE',
+      useFactory: () =>
+        ClientProxyFactory.create({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: 4001,
           },
         }),
     },

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as SchemaType } from 'mongoose';
 
 export type EventDocument = HydratedDocument<Event>;
 
@@ -7,11 +7,23 @@ export type EventDocument = HydratedDocument<Event>;
   timestamps: true,
 })
 export class Event {
-  @Prop({ required: true })
+  @Prop({ type: SchemaType.Types.ObjectId, required: true })
   userId: string;
 
   @Prop({ required: true, trim: true })
   title: string;
+
+  @Prop({
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    index: true,
+  })
+  slug: string;
+
+  @Prop({ trim: true })
+  image?: string;
 
   @Prop({ required: true, trim: true })
   description: string;

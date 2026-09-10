@@ -3,6 +3,7 @@ import { EventsService } from './events.service';
 import { EventController } from './event-service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Event, EventSchema } from './schema/event.schema';
+import { PaginationService } from '@app/common/services/pagination.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { Event, EventSchema } from './schema/event.schema';
     ]),
   ],
   controllers: [EventController],
-  providers: [EventsService],
+  providers: [EventsService, PaginationService],
 })
 export class EventModule {}

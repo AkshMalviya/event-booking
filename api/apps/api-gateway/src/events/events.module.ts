@@ -17,6 +17,17 @@ import { EventsController } from './events.controller';
           },
         }),
     },
+    {
+      provide: 'BOOKING_SERVICE',
+      useFactory: () =>
+        ClientProxyFactory.create({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: 4003,
+          },
+        }),
+    },
   ],
 })
 export class EventsModule {}

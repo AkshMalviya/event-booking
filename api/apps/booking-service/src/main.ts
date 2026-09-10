@@ -2,8 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
 import { BookingServiceModule } from './booking-service.module';
-import { MicroserviceExceptionFilter } from '@app/common';
-
+import { MicroserviceExceptionFilter } from '@app/common/filters/microservice-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(BookingServiceModule, {

@@ -2,6 +2,8 @@ export class EventEntity {
   id: string;
   userId: string;
   title: string;
+  slug: string;
+  image?: string;
   description: string;
   startDate: Date;
   endDate: Date;

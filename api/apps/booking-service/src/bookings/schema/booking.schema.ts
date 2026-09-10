@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as SchemaType } from 'mongoose';
 import { BookingStatus } from '@app/contracts/bookings/booking-status.enum';
 
 export type BookingDocument = HydratedDocument<Booking>;
@@ -8,10 +8,10 @@ export type BookingDocument = HydratedDocument<Booking>;
   timestamps: true,
 })
 export class Booking {
-  @Prop({ required: true })
+  @Prop({ type: SchemaType.Types.ObjectId, required: true })
   userId: string;
 
-  @Prop({ required: true })
+  @Prop({ type: SchemaType.Types.ObjectId, required: true })
   eventId: string;
 
   @Prop({ required: true, min: 1, default: 1 })
