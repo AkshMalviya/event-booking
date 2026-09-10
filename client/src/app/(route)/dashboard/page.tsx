@@ -46,7 +46,7 @@ export default function DashboardPage() {
     isFree: isFree || undefined,
     sortBy: sortBy || undefined,
     sortOrder: sortOrder || undefined,
-    limit: 2,
+    limit: 9,
   });
 
   const events = React.useMemo(() => {

@@ -25,7 +25,6 @@ import { CreateEventPayload } from "@/hooks/events/types";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { createEventSchema } from "@/validation/event.schema";
 import {
-  FiArrowLeft,
   FiUpload,
   FiCalendar,
   FiUsers,
@@ -216,6 +215,7 @@ export default function CreateEventPage() {
                 <NumberInput
                   label="Available Seats"
                   min={1}
+                  description={`The maximum number of attendees for this event.`}
                   leftSection={<FiUsers size={16} />}
                   {...form.getInputProps("availableSeats")}
                 />
