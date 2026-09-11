@@ -4,10 +4,11 @@ import {
   Inject,
   Injectable,
   UnauthorizedException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from './public.decorator';
@@ -24,12 +25,19 @@ type AccessTokenPayload = {
 };
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthGuard implements CanActivate, OnModuleInit {
   constructor(
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject('AUTH_SERVICE') private readonly authClient: ClientKafka,
   ) {}
+
+  async onModuleInit() {
+    Object.values(AUTH_PATTERNS).forEach((pattern) => {
+      this.authClient.subscribeToResponseOf(pattern);
+    });
+    await this.authClient.connect();
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [

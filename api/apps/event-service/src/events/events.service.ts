@@ -4,7 +4,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { isValidObjectId, Model, PipelineStage, Types } from 'mongoose';
+import {
+  isValidObjectId,
+  Model,
+  PipelineStage,
+  QueryFilter,
+  Types,
+} from 'mongoose';
 import { CreateEventDto } from '@app/contracts/events/create-event.dto';
 import { UpdateEventDto } from '@app/contracts/events/update-event.dto';
 import { Event, EventDocument } from './schema/event.schema';
@@ -61,13 +67,16 @@ export class EventsService {
     const slug = await this.generateUniqueSlug(data.title);
 
     return this.eventModel.create({
-      ...data,
+      title: data.title,
+      description: data.description,
+      availableSeats: data.availableSeats,
+      price: data.price,
+      image: data.image,
+      tags: data.tags ?? [],
       userId,
       slug,
-      image: data.image,
       startDate,
       endDate,
-      tags: data.tags ?? [],
       registeredCount: 0,
     });
   }
@@ -118,19 +127,23 @@ export class EventsService {
       }
     }
 
-    // Explicitly prevent price from being updated
-    if ('price' in data) {
-      delete (data as any).price;
-    }
+    if (data.title !== undefined) event.title = data.title;
+    if (data.description !== undefined) event.description = data.description;
+    if (data.startDate !== undefined)
+      event.startDate = new Date(data.startDate);
+    if (data.endDate !== undefined) event.endDate = new Date(data.endDate);
+    if (data.availableSeats !== undefined)
+      event.availableSeats = data.availableSeats;
+    if (data.tags !== undefined) event.tags = data.tags;
+    if (data.image !== undefined) event.image = data.image;
 
-    Object.assign(event, data);
     return event.save();
   }
 
   findAll(query: EventQueryDto = {}) {
     const { page, limit, search, isFree, sortBy, sortOrder, timeline } = query;
 
-    const matchStage: any = {};
+    const matchStage: QueryFilter<Event> = {};
 
     if (timeline) {
       const now = new Date();
@@ -191,7 +204,7 @@ export class EventsService {
       return null;
     }
 
-    const filter: any = {
+    const filter: QueryFilter<Event> = {
       $expr: {
         $lte: [{ $add: ['$registeredCount', count] }, '$availableSeats'],
       },
@@ -217,7 +230,7 @@ export class EventsService {
       return null;
     }
 
-    const filter: any = {};
+    const filter: QueryFilter<Event> = {};
     if (isValidObjectId(eventId)) {
       filter._id = eventId;
     } else {
@@ -235,7 +248,7 @@ export class EventsService {
 
   async filterByTimeline(eventIds: string[], timeline: string) {
     const now = new Date();
-    const matchStage: any = { _id: { $in: eventIds } };
+    const matchStage: QueryFilter<Event> = { _id: { $in: eventIds } };
 
     if (timeline === 'upcoming') {
       matchStage.startDate = { $gt: now };

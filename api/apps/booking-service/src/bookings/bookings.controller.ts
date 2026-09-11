@@ -1,6 +1,5 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from '@app/contracts/bookings/create-booking.dto';
 import { BookingQueryDto } from '@app/contracts/bookings/booking-query.dto';

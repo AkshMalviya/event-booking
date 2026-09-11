@@ -81,12 +81,12 @@ export default function EditEventPage() {
   useEffect(() => {
     if (event) {
       form.setValues({
-        title: event.title,
-        description: event.description,
+        title: event.title || "",
+        description: event.description || "",
         startDate: new Date(event.startDate),
         endDate: new Date(event.endDate),
-        availableSeats: event.availableSeats,
-        price: event.price,
+        availableSeats: event.availableSeats || 5,
+        price: event.price || 0,
         tags: event.tags ? event.tags.join(", ") : "",
       });
     }
