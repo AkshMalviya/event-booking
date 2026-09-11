@@ -24,5 +24,3 @@ export const API_URLS = {
     CANCEL: (id: string) => `/bookings/${id}/cancel`,
   },
 } as const;
-
-export type ApiUrls = typeof API_URLS;

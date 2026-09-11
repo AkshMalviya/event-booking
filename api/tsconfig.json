@@ -36,5 +36,8 @@
     }
   },
   "include": ["apps/**/*", "libs/**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"],
+  "watchOptions": {
+    "excludeDirectories": ["**/node_modules", "dist"]
+  }
 }

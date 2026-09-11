@@ -3,12 +3,9 @@ import request, { ApiError } from "@/lib/request.axios";
 import { API_URLS } from "@/hooks/api-urls";
 import { EventsQueryParams, EventsResponse } from "./useInfiniteEventsQuery";
 
-const MY_EVENTS_INFINITE_QUERY_KEY = (params: EventsQueryParams) =>
-  ["my-events-infinite", params] as const;
-
-export function useInfiniteMyEventsQuery(params: EventsQueryParams = {}) {
+export const useInfiniteMyEventsQuery = (params: EventsQueryParams = {}) => {
   return useInfiniteQuery<EventsResponse, ApiError>({
-    queryKey: MY_EVENTS_INFINITE_QUERY_KEY(params),
+    queryKey: ["my-events-infinite", params],
     queryFn: async ({
       pageParam,
       queryKey,
@@ -40,4 +37,4 @@ export function useInfiniteMyEventsQuery(params: EventsQueryParams = {}) {
       return undefined;
     },
   });
-}
+};

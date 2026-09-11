@@ -27,7 +27,7 @@ export class ApiError extends Error {
   }
 }
 
-export const apiClient: AxiosInstance = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {

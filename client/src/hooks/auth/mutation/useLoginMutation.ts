@@ -1,9 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser } from "@/store/slice/userSlice";
-import { USER_PROFILE_QUERY_KEY } from "../query/useUserQuery";
 import request, { ApiError } from "@/lib/request.axios";
 import { API_URLS } from "@/hooks/api-urls";
+import { queryClient } from "@/app/providers";
 
 interface LoginPayload {
   email: string;
@@ -18,13 +18,12 @@ interface LoginResponse {
   };
 }
 
-function loginUser(payload: LoginPayload): Promise<LoginResponse> {
+const loginUser = (payload: LoginPayload) => {
   return request.post<LoginResponse>(API_URLS.AUTH.LOGIN, payload);
-}
+};
 
 export function useLoginMutation() {
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
 
   return useMutation<LoginResponse, ApiError, LoginPayload>({
     mutationFn: loginUser,
@@ -38,7 +37,7 @@ export function useLoginMutation() {
           }),
         );
       }
-      queryClient.invalidateQueries({ queryKey: USER_PROFILE_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["auth", "userProfile"] });
     },
   });
 }

@@ -4,11 +4,11 @@ import { API_URLS } from "@/hooks/api-urls";
 import { BookingItem } from "../types";
 import { queryClient } from "@/app/providers";
 
-function cancelBooking(bookingId: string): Promise<BookingItem> {
+const cancelBooking = (bookingId: string) => {
   return request.patch<BookingItem>(API_URLS.BOOKINGS.CANCEL(bookingId));
-}
+};
 
-export function useCancelBookingMutation() {
+export const useCancelBookingMutation = () => {
   return useMutation<BookingItem, ApiError, string>({
     mutationFn: cancelBooking,
     onSuccess: () => {
@@ -16,4 +16,4 @@ export function useCancelBookingMutation() {
       queryClient.invalidateQueries({ queryKey: ["events-infinite"] });
     },
   });
-}
+};

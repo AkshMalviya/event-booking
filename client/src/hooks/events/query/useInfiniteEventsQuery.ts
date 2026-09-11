@@ -21,9 +21,6 @@ export interface EventsResponse {
   };
 }
 
-const EVENTS_INFINITE_QUERY_KEY = (params: EventsQueryParams) =>
-  ["events-infinite", params] as const;
-
 async function getInfiniteEvents({
   pageParam = 1,
   queryKey,
@@ -47,9 +44,9 @@ async function getInfiniteEvents({
   );
 }
 
-export function useInfiniteEventsQuery(params: EventsQueryParams) {
+export const useInfiniteEventsQuery = (params: EventsQueryParams) => {
   return useInfiniteQuery<EventsResponse, ApiError>({
-    queryKey: EVENTS_INFINITE_QUERY_KEY(params),
+    queryKey: ["events-infinite", params],
     queryFn: getInfiniteEvents,
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
@@ -59,4 +56,4 @@ export function useInfiniteEventsQuery(params: EventsQueryParams) {
       return undefined;
     },
   });
-}
+};

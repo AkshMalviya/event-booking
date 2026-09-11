@@ -3,15 +3,13 @@ import request, { ApiError } from "@/lib/request.axios";
 import { API_URLS } from "@/hooks/api-urls";
 import { EventItem } from "../types";
 
-const EVENTS_QUERY_KEY = ["events"] as const;
-
-function getEvents(): Promise<EventItem[]> {
+const getEvents = () => {
   return request.get<EventItem[]>(API_URLS.EVENTS.FIND_ALL);
-}
+};
 
-export function useEventsQuery() {
+export const useEventsQuery = () => {
   return useQuery<EventItem[], ApiError>({
-    queryKey: EVENTS_QUERY_KEY,
+    queryKey: ["events"],
     queryFn: getEvents,
   });
-}
+};

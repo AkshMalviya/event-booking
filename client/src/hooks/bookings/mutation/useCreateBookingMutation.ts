@@ -4,11 +4,11 @@ import { API_URLS } from "@/hooks/api-urls";
 import { BookingItem, CreateBookingPayload } from "../types";
 import { queryClient } from "@/app/providers";
 
-function createBooking(payload: CreateBookingPayload): Promise<BookingItem> {
+const createBooking = (payload: CreateBookingPayload) => {
   return request.post<BookingItem>(API_URLS.BOOKINGS.CREATE, payload);
-}
+};
 
-export function useCreateBookingMutation() {
+export const useCreateBookingMutation = () => {
   return useMutation<BookingItem, ApiError, CreateBookingPayload>({
     mutationFn: createBooking,
     onSuccess: () => {
@@ -16,4 +16,4 @@ export function useCreateBookingMutation() {
       queryClient.invalidateQueries({ queryKey: ["events-infinite"] });
     },
   });
-}
+};

@@ -3,7 +3,7 @@ import request, { ApiError } from "@/lib/request.axios";
 import { API_URLS } from "@/hooks/api-urls";
 import { BookingItem } from "../types";
 
-export interface BookingsQueryParams {
+interface BookingsQueryParams {
   filter?: "all" | "ongoing" | "upcoming" | "past";
   limit?: number;
 }
@@ -18,9 +18,6 @@ interface BookingsResponse {
   };
 }
 
-const BOOKINGS_INFINITE_QUERY_KEY = (params: BookingsQueryParams) =>
-  ["my-bookings-infinite", params] as const;
-
 async function getInfiniteBookings({
   pageParam = 1,
   queryKey,
@@ -29,7 +26,7 @@ async function getInfiniteBookings({
   queryKey: readonly unknown[];
 }): Promise<BookingsResponse> {
   const [, params] = queryKey as readonly [string, BookingsQueryParams];
-  
+
   const queryParams = new URLSearchParams();
   queryParams.append("page", String(pageParam));
   if (params.limit) queryParams.append("limit", params.limit.toString());
@@ -42,7 +39,7 @@ async function getInfiniteBookings({
 
 export function useInfiniteMyBookingsQuery(params: BookingsQueryParams) {
   return useInfiniteQuery<BookingsResponse, ApiError>({
-    queryKey: BOOKINGS_INFINITE_QUERY_KEY(params),
+    queryKey: ["my-bookings-infinite", params],
     queryFn: getInfiniteBookings,
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {

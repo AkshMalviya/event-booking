@@ -4,9 +4,7 @@ import { API_URLS } from "@/hooks/api-urls";
 import { CreateEventPayload, EventItem } from "../types";
 import { queryClient } from "@/app/providers";
 
-function createEvent(
-  payload: CreateEventPayload | FormData,
-): Promise<EventItem> {
+const createEvent = (payload: CreateEventPayload | FormData) => {
   let formData: FormData;
 
   if (payload instanceof FormData) {
@@ -29,14 +27,12 @@ function createEvent(
     }
   }
 
-  // Do NOT pass headers: { "Content-Type": "multipart/form-data" }.
-  // Passing "Content-Type": undefined ensures Axios and browser set the correct multipart/form-data with boundary.
   return request.post<EventItem>(API_URLS.EVENTS.CREATE, formData, {
     headers: {
       "Content-Type": undefined,
     },
   });
-}
+};
 
 export function useCreateEventMutation() {
   return useMutation<EventItem, ApiError, CreateEventPayload | FormData>({

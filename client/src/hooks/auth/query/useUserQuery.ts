@@ -12,17 +12,15 @@ interface UserProfile {
   updatedAt?: string;
 }
 
-export const USER_PROFILE_QUERY_KEY = ["auth", "userProfile"] as const;
-
-function getUserProfile(): Promise<UserProfile> {
+const getUserProfile = () => {
   return request.get<UserProfile>(API_URLS.AUTH.ME);
-}
+};
 
 export function useUserQuery() {
   const dispatch = useAppDispatch();
 
   return useQuery<UserProfile, ApiError>({
-    queryKey: USER_PROFILE_QUERY_KEY,
+    queryKey: ["auth", "userProfile"],
     queryFn: async () => {
       const data = await getUserProfile();
       if (data) {

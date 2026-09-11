@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/notifications/styles.css";
@@ -7,14 +7,10 @@ import "./globals.css";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import { Providers } from "./providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -28,11 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      {...mantineHtmlProps}
-      className={`${geistSans.variable} ${geistMono.variable}`}
-    >
+    <html lang="en" {...mantineHtmlProps} className={`${inter.variable}`}>
       <head>
         <ColorSchemeScript />
       </head>
