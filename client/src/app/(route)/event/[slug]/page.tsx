@@ -1,39 +1,36 @@
 "use client";
-import React, { useState } from "react";
-import {
-  Container,
-  Title,
-  Text,
-  Stack,
-  Card,
-  Badge,
-  Button,
-  Group,
-  SimpleGrid,
-  Center,
-  Loader,
-  Paper,
-  Image,
-  Box,
-  NumberInput,
-  Divider,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { modals } from "@mantine/modals";
-import { useParams, useRouter } from "next/navigation";
-import { useAppSelector } from "@/store/hooks";
-import { useEventBySlugQuery } from "@/hooks/events/query/useEventBySlugQuery";
-import { useCreateBookingMutation } from "@/hooks/bookings/mutation/useCreateBookingMutation";
 import { API_BASE_URL } from "@/hooks/api-urls";
+import { useCreateBookingMutation } from "@/hooks/bookings/mutation/useCreateBookingMutation";
+import { useEventBySlugQuery } from "@/hooks/events/query/useEventBySlugQuery";
+import { useAppSelector } from "@/store/hooks";
 import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  Center,
+  Container,
+  Divider,
+  Group,
+  Image,
+  Loader,
+  NumberInput,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import {
+  FiAlertCircle,
   FiArrowLeft,
   FiCalendar,
   FiClock,
   FiUsers,
-  FiInfo,
-  FiAlertTriangle,
-  FiAlertCircle,
-  FiSlash,
 } from "react-icons/fi";
 import { HiOutlineTicket } from "react-icons/hi2";
 
@@ -176,20 +173,26 @@ export default function EventDetailsPage() {
     });
   };
 
+  const showMessage = getMessageAndColor({
+    isOrganizer,
+    isEnded,
+    isStarted,
+    isSoldOut,
+  });
+
   return (
     <Container size="lg" py="xl">
       <Stack gap="xl">
         {/* Back navigation */}
-        <Group>
-          <Button
-            variant="subtle"
-            size="sm"
-            leftSection={<FiArrowLeft size={16} />}
-            onClick={() => router.push("/dashboard")}
-          >
-            Back to All Events
-          </Button>
-        </Group>
+        <Button
+          variant="subtle"
+          size="sm"
+          w={"fit-content"}
+          leftSection={<FiArrowLeft size={16} />}
+          onClick={() => router.push("/dashboard")}
+        >
+          Back to All Events
+        </Button>
 
         {/* Hero Event Banner Image */}
         {imageUrl ? (
@@ -238,8 +241,8 @@ export default function EventDetailsPage() {
 
               {event.tags && event.tags.length > 0 && (
                 <Group gap="xs" mt="sm">
-                  {event.tags.map((tag) => (
-                    <Badge key={tag} size="sm" variant="outline">
+                  {event.tags.map((tag, index) => (
+                    <Badge key={`${tag}-${index}`} size="sm" variant="outline">
                       {tag}
                     </Badge>
                   ))}
@@ -348,47 +351,12 @@ export default function EventDetailsPage() {
                   </Badge>
                 </Group>
 
-                {isOrganizer ? (
-                  <Paper p="sm" withBorder radius="md" bg="blue.0">
-                    <Group gap="xs" align="center">
-                      <FiInfo size={16} color="var(--mantine-color-blue-8)" />
-                      <Text size="xs" c="blue.9" fw={500}>
-                        You are the organizer of this event. You cannot book
-                        tickets for your own event.
-                      </Text>
-                    </Group>
-                  </Paper>
-                ) : isEnded ? (
-                  <Paper p="sm" withBorder radius="md" bg="gray.1">
-                    <Group gap="xs" align="center">
-                      <FiSlash size={16} color="var(--mantine-color-gray-8)" />
-                      <Text size="xs" c="gray.8" fw={500}>
-                        This event has already ended. Bookings are closed.
-                      </Text>
-                    </Group>
-                  </Paper>
-                ) : isStarted ? (
-                  <Paper p="sm" withBorder radius="md" bg="yellow.0">
-                    <Group gap="xs" align="center">
-                      <FiAlertTriangle
-                        size={16}
-                        color="var(--mantine-color-yellow-8)"
-                      />
-                      <Text size="xs" c="yellow.9" fw={500}>
-                        This event has already started. You can only book
-                        tickets for upcoming events.
-                      </Text>
-                    </Group>
-                  </Paper>
-                ) : isSoldOut ? (
+                {showMessage ? (
                   <Paper p="sm" withBorder radius="md" bg="red.0">
                     <Group gap="xs" align="center">
-                      <FiAlertCircle
-                        size={16}
-                        color="var(--mantine-color-red-8)"
-                      />
-                      <Text size="xs" c="red.9" fw={500}>
-                        All seats have been reserved. This event is sold out.
+                      <FiAlertCircle size={16} color={showMessage.color} />
+                      <Text size="xs" c={showMessage.color} fw={500}>
+                        {showMessage.message}
                       </Text>
                     </Group>
                   </Paper>
@@ -444,3 +412,44 @@ export default function EventDetailsPage() {
     </Container>
   );
 }
+
+const getMessageAndColor = ({
+  isOrganizer,
+  isEnded,
+  isStarted,
+  isSoldOut,
+}: {
+  isOrganizer: boolean;
+  isEnded: boolean;
+  isStarted: boolean;
+  isSoldOut: boolean;
+}) => {
+  if (isOrganizer) {
+    return {
+      message:
+        "You are the organizer of this event. You cannot book tickets for your own event.",
+      color: "var(--mantine-color-blue-8)",
+    };
+  }
+  if (isEnded) {
+    return {
+      message: "This event has already ended. Bookings are closed.",
+      color: "var(--mantine-color-gray-8)",
+    };
+  }
+  if (isStarted) {
+    return {
+      message:
+        "This event has already started. You can only book tickets for upcoming events.",
+      color: "var(--mantine-color-yellow-8)",
+    };
+  }
+  if (isSoldOut) {
+    return {
+      message: "All seats have been reserved. This event is sold out.",
+      color: "var(--mantine-color-red-8)",
+    };
+  }
+
+  return null;
+};

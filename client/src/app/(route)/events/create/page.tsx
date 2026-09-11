@@ -45,7 +45,7 @@ export default function CreateEventPage() {
       description: "",
       startDate: null as Date | null,
       endDate: null as Date | null,
-      availableSeats: 50,
+      availableSeats: 5,
       price: 0,
       tags: "",
     },

@@ -51,6 +51,10 @@ const BookingCard = ({ booking, onCancel, cancelLoading }: IProps) => {
     }
   };
 
+  const isOngoingOrPast = event?.startDate
+    ? new Date(event.startDate) <= new Date()
+    : false;
+
   return (
     <Card
       key={bookingId}
@@ -193,25 +197,27 @@ const BookingCard = ({ booking, onCancel, cancelLoading }: IProps) => {
         )}
       </Stack>
 
-      <Box mt="md">
-        {!isCancelled ? (
-          <Button
-            variant="outline"
-            color="red"
-            fullWidth
-            radius="md"
-            leftSection={<FiXCircle size={16} />}
-            loading={cancelLoading}
-            onClick={onCancel}
-          >
-            Cancel Booking
-          </Button>
-        ) : (
-          <Button variant="light" color="gray" fullWidth radius="md" disabled>
-            Booking Cancelled
-          </Button>
-        )}
-      </Box>
+      {(isCancelled || !isOngoingOrPast) && (
+        <Box mt="md">
+          {isCancelled ? (
+            <Button variant="light" color="gray" fullWidth radius="md" disabled>
+              Booking Cancelled
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              color="red"
+              fullWidth
+              radius="md"
+              leftSection={<FiXCircle size={16} />}
+              loading={cancelLoading}
+              onClick={onCancel}
+            >
+              Cancel Booking
+            </Button>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };

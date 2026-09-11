@@ -6,6 +6,12 @@ export enum SortOrder {
   DESC = 'desc',
 }
 
+export enum EventTimeline {
+  UPCOMING = 'upcoming',
+  ONGOING = 'ongoing',
+  PAST = 'past',
+}
+
 export class EventQueryDto {
   @IsOptional()
   @Type(() => Number)
@@ -35,4 +41,8 @@ export class EventQueryDto {
   @IsOptional()
   @IsEnum(SortOrder)
   sortOrder?: SortOrder = SortOrder.ASC;
+
+  @IsOptional()
+  @IsEnum(EventTimeline)
+  timeline?: EventTimeline;
 }

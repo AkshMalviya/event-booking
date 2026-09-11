@@ -9,6 +9,7 @@ export interface EventsQueryParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   limit?: number;
+  timeline?: "upcoming" | "ongoing" | "past";
 }
 
 export interface EventsResponse {
@@ -38,6 +39,7 @@ async function getInfiniteEvents({
     queryParams.append("isFree", params.isFree.toString());
   if (params.sortBy) queryParams.append("sortBy", params.sortBy);
   if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+  if (params.timeline) queryParams.append("timeline", params.timeline);
 
   return request.get<EventsResponse>(
     `${API_URLS.EVENTS.FIND_ALL}?${queryParams.toString()}`,

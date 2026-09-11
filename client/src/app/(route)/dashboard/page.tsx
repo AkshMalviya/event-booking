@@ -13,6 +13,7 @@ import {
   TextInput,
   Switch,
   Menu,
+  Select,
 } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
@@ -32,6 +33,9 @@ export default function DashboardPage() {
   const [isFree, setIsFree] = React.useState(false);
   const [sortBy, setSortBy] = React.useState<string | null>("startDate");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
+  const [timeline, setTimeline] = React.useState<
+    "upcoming" | "ongoing" | "past"
+  >("upcoming");
 
   const {
     data,
@@ -46,6 +50,7 @@ export default function DashboardPage() {
     isFree: isFree || undefined,
     sortBy: sortBy || undefined,
     sortOrder: sortOrder || undefined,
+    timeline,
     limit: 9,
   });
 
@@ -73,7 +78,7 @@ export default function DashboardPage() {
         <Group justify="space-between" align="center" wrap="wrap">
           <Stack gap={2}>
             <Title order={2} fw={700}>
-              Hii {user.name || "Aksh"}
+              Hii, {user.name || "Aksh"}
             </Title>
             <Text size="sm" c="dimmed">
               Explore upcoming events and check details
@@ -98,6 +103,19 @@ export default function DashboardPage() {
             style={{ flex: 1, minWidth: 250 }}
           />
           <Group>
+            <Select
+              value={timeline}
+              onChange={(v) =>
+                setTimeline(v as "upcoming" | "ongoing" | "past")
+              }
+              data={[
+                { value: "upcoming", label: "Upcoming" },
+                { value: "ongoing", label: "Ongoing" },
+                { value: "past", label: "Past" },
+              ]}
+              w={120}
+              allowDeselect={false}
+            />
             <Switch
               label="Free Events Only"
               checked={isFree}

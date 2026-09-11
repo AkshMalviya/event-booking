@@ -112,8 +112,8 @@ const DashboardCard = ({ event, onViewClick }: IProps) => {
 
         {event.tags && event.tags.length > 0 && (
           <Group gap={6}>
-            {event.tags.map((tag) => (
-              <Badge key={tag} variant="gradient">
+            {event.tags.map((tag, index) => (
+              <Badge key={`${tag}-${index}`} variant="gradient">
                 {tag}
               </Badge>
             ))}

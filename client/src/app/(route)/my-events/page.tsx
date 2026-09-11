@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Container,
   Title,
@@ -29,7 +29,7 @@ export default function MyEventsPage() {
     isFetchingNextPage,
   } = useInfiniteMyEventsQuery({ limit: 10 });
 
-  const events = React.useMemo(() => {
+  const events = useMemo(() => {
     return data?.pages.flatMap((page) => page.data) || [];
   }, [data]);
 

@@ -58,7 +58,7 @@ export default function EditEventPage() {
       description: "",
       startDate: null as Date | null,
       endDate: null as Date | null,
-      availableSeats: 50,
+      availableSeats: 5,
       price: 0,
       tags: "",
     },
@@ -68,7 +68,7 @@ export default function EditEventPage() {
         val.trim().length === 0 ? "Description is required" : null,
       startDate: (val) => (!val ? "Start date is required" : null),
       endDate: (val) => (!val ? "End date is required" : null),
-      availableSeats: (val, values) => {
+      availableSeats: (val) => {
         if (!val) return "Available seats required";
         if (event && val < event.registeredCount) {
           return `Cannot be less than booked seats (${event.registeredCount})`;
@@ -90,7 +90,6 @@ export default function EditEventPage() {
         tags: event.tags ? event.tags.join(", ") : "",
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event]);
 
   if (isLoading) {

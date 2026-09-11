@@ -128,9 +128,21 @@ export class EventsService {
   }
 
   findAll(query: EventQueryDto = {}) {
-    const { page, limit, search, isFree, sortBy, sortOrder } = query;
+    const { page, limit, search, isFree, sortBy, sortOrder, timeline } = query;
 
     const matchStage: any = {};
+
+    if (timeline) {
+      const now = new Date();
+      if (timeline === 'upcoming') {
+        matchStage.startDate = { $gt: now };
+      } else if (timeline === 'past') {
+        matchStage.endDate = { $lt: now };
+      } else if (timeline === 'ongoing') {
+        matchStage.startDate = { $lte: now };
+        matchStage.endDate = { $gte: now };
+      }
+    }
 
     if (search) {
       matchStage.$or = [

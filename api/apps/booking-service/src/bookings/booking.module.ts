@@ -23,10 +23,15 @@ import { PaginationService } from '@app/common/services/pagination.service';
       provide: 'EVENT_SERVICE',
       useFactory: () =>
         ClientProxyFactory.create({
-          transport: Transport.TCP,
+          transport: Transport.KAFKA,
           options: {
-            host: 'localhost',
-            port: 4002,
+            client: {
+              clientId: 'event-booking-client',
+              brokers: ['localhost:9092'],
+            },
+            consumer: {
+              groupId: 'event-consumer',
+            },
           },
         }),
     },
@@ -34,10 +39,15 @@ import { PaginationService } from '@app/common/services/pagination.service';
       provide: 'AUTH_SERVICE',
       useFactory: () =>
         ClientProxyFactory.create({
-          transport: Transport.TCP,
+          transport: Transport.KAFKA,
           options: {
-            host: 'localhost',
-            port: 4001,
+            client: {
+              clientId: 'auth-booking-client',
+              brokers: ['localhost:9092'],
+            },
+            consumer: {
+              groupId: 'auth-consumer',
+            },
           },
         }),
     },
