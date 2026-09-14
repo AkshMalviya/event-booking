@@ -11,7 +11,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 
 import { CreateBookingDto } from '@app/contracts/bookings/create-booking.dto';
@@ -19,6 +18,7 @@ import { BookingQueryDto } from '@app/contracts/bookings/booking-query.dto';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
 import { BookingEntity } from '@app/contracts/bookings/booking.entity';
 import { UserEntity } from '@app/contracts/auth/user.entity';
+import { KafkaCircuitBreaker } from '@app/common';
 
 type AuthenticatedRequest = Request & {
   user: UserEntity;
@@ -26,10 +26,14 @@ type AuthenticatedRequest = Request & {
 
 @Controller('bookings')
 export class BookingsController implements OnModuleInit {
+  private breaker: KafkaCircuitBreaker;
+
   constructor(
     @Inject('BOOKING_SERVICE')
     private readonly bookingClient: ClientKafka,
-  ) {}
+  ) {
+    this.breaker = new KafkaCircuitBreaker(this.bookingClient);
+  }
 
   async onModuleInit() {
     Object.values(BOOKING_PATTERNS).forEach((pattern) => {
@@ -40,12 +44,10 @@ export class BookingsController implements OnModuleInit {
 
   @Post()
   create(@Body() body: CreateBookingDto, @Req() request: AuthenticatedRequest) {
-    return firstValueFrom(
-      this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.CREATE, {
-        booking: body,
-        userId: request.user.id,
-      }),
-    );
+    return this.breaker.send<BookingEntity>(BOOKING_PATTERNS.CREATE, {
+      booking: body,
+      userId: request.user.id,
+    });
   }
 
   @Get('my-bookings')
@@ -53,31 +55,25 @@ export class BookingsController implements OnModuleInit {
     @Req() request: AuthenticatedRequest,
     @Query() query: BookingQueryDto,
   ) {
-    return firstValueFrom(
-      this.bookingClient.send<any>(BOOKING_PATTERNS.FIND_ALL_USER, {
-        userId: request.user.id,
-        query,
-      }),
-    );
+    return this.breaker.send<any>(BOOKING_PATTERNS.FIND_ALL_USER, {
+      userId: request.user.id,
+      query,
+    });
   }
 
   @Get(':id')
   findOne(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
-    return firstValueFrom(
-      this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.FIND_ONE, {
-        bookingId: id,
-        userId: request.user.id,
-      }),
-    );
+    return this.breaker.send<BookingEntity>(BOOKING_PATTERNS.FIND_ONE, {
+      bookingId: id,
+      userId: request.user.id,
+    });
   }
 
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
-    return firstValueFrom(
-      this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.CANCEL, {
-        bookingId: id,
-        userId: request.user.id,
-      }),
-    );
+    return this.breaker.send<BookingEntity>(BOOKING_PATTERNS.CANCEL, {
+      bookingId: id,
+      userId: request.user.id,
+    });
   }
 }

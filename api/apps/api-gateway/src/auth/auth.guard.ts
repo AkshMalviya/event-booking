@@ -9,11 +9,11 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ClientKafka } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
 import { UserEntity } from '@app/contracts/auth/user.entity';
+import { KafkaCircuitBreaker } from '@app/common';
 
 type AuthenticatedRequest = Request & {
   user?: UserEntity;
@@ -26,11 +26,15 @@ type AccessTokenPayload = {
 
 @Injectable()
 export class AuthGuard implements CanActivate, OnModuleInit {
+  private breaker: KafkaCircuitBreaker;
+
   constructor(
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
     @Inject('AUTH_SERVICE') private readonly authClient: ClientKafka,
-  ) {}
+  ) {
+    this.breaker = new KafkaCircuitBreaker(this.authClient);
+  }
 
   async onModuleInit() {
     Object.values(AUTH_PATTERNS).forEach((pattern) => {
@@ -60,11 +64,9 @@ export class AuthGuard implements CanActivate, OnModuleInit {
       const payload =
         await this.jwtService.verifyAsync<AccessTokenPayload>(token);
 
-      request.user = await firstValueFrom(
-        this.authClient.send<UserEntity>(AUTH_PATTERNS.GET_USER, {
-          userId: payload.sub,
-        }),
-      );
+      request.user = await this.breaker.send<UserEntity>(AUTH_PATTERNS.GET_USER, {
+        userId: payload.sub,
+      });
 
       return true;
     } catch {

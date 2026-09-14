@@ -28,7 +28,7 @@ export class RpcToHttpExceptionFilter implements ExceptionFilter {
       if (typeof possibleStatus === 'number') {
         status = possibleStatus;
       } else {
-        status = HttpStatus.BAD_REQUEST;
+        status = HttpStatus.INTERNAL_SERVER_ERROR;
       }
 
       message =

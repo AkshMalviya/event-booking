@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { AuthServiceModule } from './auth-service.module';
-import { MicroserviceExceptionFilter, KAFKA_RETRY_CONFIG } from '@app/common';
+import { KafkaDLQExceptionFilter, KAFKA_RETRY_CONFIG } from '@app/common';
 import { MongooseSerializerInterceptor } from '@app/common/interceptors/mongoose-serializer.interceptor';
 
 async function bootstrap() {
@@ -20,7 +20,7 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.useGlobalFilters(new MicroserviceExceptionFilter());
+  app.useGlobalFilters(new KafkaDLQExceptionFilter());
   app.useGlobalInterceptors(new MongooseSerializerInterceptor());
   await app.listen();
 }

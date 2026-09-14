@@ -11,6 +11,15 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 60 * 1000,
       refetchOnWindowFocus: false,
+      retry: (failureCount, error) => {
+        const errorWithStatus = error as { statusCode?: number };
+        // Stop retrying immediately if we get a 503 (Circuit Breaker OPEN)
+        if (errorWithStatus?.statusCode === 503) {
+          return false;
+        }
+        // Otherwise, use the standard 3 retries
+        return failureCount < 3;
+      },
     },
   },
 });

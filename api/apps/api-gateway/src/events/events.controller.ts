@@ -13,7 +13,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 
 import { CreateEventDto } from '@app/contracts/events/create-event.dto';
@@ -24,6 +23,7 @@ import { EventEntity } from '@app/contracts/events/event.entity';
 import { UserEntity } from '@app/contracts/auth/user.entity';
 import { uploadInterceptor } from '@app/common/utils/multer.util';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
+import { KafkaCircuitBreaker } from '@app/common';
 
 type AuthenticatedRequest = Request & {
   user: UserEntity;
@@ -31,12 +31,18 @@ type AuthenticatedRequest = Request & {
 
 @Controller('events')
 export class EventsController implements OnModuleInit {
+  private eventBreaker: KafkaCircuitBreaker;
+  private bookingBreaker: KafkaCircuitBreaker;
+
   constructor(
     @Inject('EVENT_SERVICE')
     private readonly eventClient: ClientKafka,
     @Inject('BOOKING_SERVICE')
     private readonly bookingClient: ClientKafka,
-  ) {}
+  ) {
+    this.eventBreaker = new KafkaCircuitBreaker(this.eventClient);
+    this.bookingBreaker = new KafkaCircuitBreaker(this.bookingClient);
+  }
 
   async onModuleInit() {
     Object.values(EVENT_PATTERNS).forEach((pattern) => {
@@ -51,9 +57,7 @@ export class EventsController implements OnModuleInit {
 
   @Get()
   findAll(@Query() query: EventQueryDto) {
-    return firstValueFrom(
-      this.eventClient.send<any>(EVENT_PATTERNS.FIND_ALL, query),
-    );
+    return this.eventBreaker.send<any>(EVENT_PATTERNS.FIND_ALL, query);
   }
 
   @Get('my-events')
@@ -61,20 +65,19 @@ export class EventsController implements OnModuleInit {
     @Req() request: AuthenticatedRequest,
     @Query() query: EventQueryDto,
   ) {
-    return firstValueFrom(
-      this.eventClient.send<any>(EVENT_PATTERNS.FIND_ALL_ORGANIZER, {
-        userId: request.user.id,
-        query,
-      }),
-    );
+    return this.eventBreaker.send<any>(EVENT_PATTERNS.FIND_ALL_ORGANIZER, {
+      userId: request.user.id,
+      query,
+    });
   }
 
   @Get(':slug')
   async findOne(@Param('slug') slug: string) {
-    const event = await firstValueFrom(
-      this.eventClient.send<EventEntity | null>(EVENT_PATTERNS.FIND_ONE, {
+    const event = await this.eventBreaker.send<EventEntity | null>(
+      EVENT_PATTERNS.FIND_ONE,
+      {
         eventId: slug,
-      }),
+      },
     );
     if (!event) {
       throw new NotFoundException(`Event '${slug}' not found`);
@@ -87,12 +90,10 @@ export class EventsController implements OnModuleInit {
     @Param('eventId') eventId: string,
     @Req() request: AuthenticatedRequest,
   ) {
-    return firstValueFrom(
-      this.bookingClient.send<any>(BOOKING_PATTERNS.FIND_ALL_BY_EVENT, {
-        eventId,
-        userId: request.user.id,
-      }),
-    );
+    return this.bookingBreaker.send<any>(BOOKING_PATTERNS.FIND_ALL_BY_EVENT, {
+      eventId,
+      userId: request.user.id,
+    });
   }
 
   @Post('update/:id')
@@ -108,30 +109,22 @@ export class EventsController implements OnModuleInit {
       imageUrl = `/uploads/${file.filename}`;
     }
 
-    const {
-      title,
-      description,
-      startDate,
-      endDate,
-      availableSeats,
-      tags,
-    } = data;
+    const { title, description, startDate, endDate, availableSeats, tags } =
+      data;
 
-    return firstValueFrom(
-      this.eventClient.send<EventEntity>(EVENT_PATTERNS.UPDATE, {
-        eventId: id,
-        userId: request.user.id,
-        event: {
-          title,
-          description,
-          startDate,
-          endDate,
-          availableSeats,
-          tags,
-          image: imageUrl,
-        },
-      }),
-    );
+    return this.eventBreaker.send<EventEntity>(EVENT_PATTERNS.UPDATE, {
+      eventId: id,
+      userId: request.user.id,
+      event: {
+        title,
+        description,
+        startDate,
+        endDate,
+        availableSeats,
+        tags,
+        image: imageUrl,
+      },
+    });
   }
 
   @Post()
@@ -153,20 +146,18 @@ export class EventsController implements OnModuleInit {
       tags,
     } = data;
 
-    return firstValueFrom(
-      this.eventClient.send<EventEntity>(EVENT_PATTERNS.CREATE, {
-        event: {
-          title,
-          description,
-          startDate,
-          endDate,
-          availableSeats,
-          price,
-          tags,
-          image: imageUrl,
-        },
-        userId: request.user.id,
-      }),
-    );
+    return this.eventBreaker.send<EventEntity>(EVENT_PATTERNS.CREATE, {
+      event: {
+        title,
+        description,
+        startDate,
+        endDate,
+        availableSeats,
+        price,
+        tags,
+        image: imageUrl,
+      },
+      userId: request.user.id,
+    });
   }
 }
