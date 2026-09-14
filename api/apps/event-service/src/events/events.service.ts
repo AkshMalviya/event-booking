@@ -182,13 +182,12 @@ export class EventsService {
     const order = sortOrder === SortOrder.DESC ? -1 : 1;
     aggregation.push({ $sort: { [sortField]: order } });
 
-    return this.paginationService.aggregate(
-      this.eventModel,
+    return this.paginationService.aggregate({
+      model: this.eventModel,
       aggregation,
-      [],
       page,
       limit,
-    );
+    });
   }
 
   async findOne(identifier: string) {
@@ -276,12 +275,11 @@ export class EventsService {
       { $match: { userId: new Types.ObjectId(userId) } },
       { $sort: { createdAt: -1 } },
     ];
-    return this.paginationService.aggregate(
-      this.eventModel,
+    return this.paginationService.aggregate({
+      model: this.eventModel,
       aggregation,
-      [],
       page,
       limit,
-    );
+    });
   }
 }

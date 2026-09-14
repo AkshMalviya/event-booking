@@ -159,13 +159,12 @@ export class BookingsService implements OnModuleInit {
       { $sort: { createdAt: -1 } },
     ];
 
-    const paginated = await this.paginationService.aggregate(
-      this.bookingModel,
+    const paginated = await this.paginationService.aggregate({
+      model: this.bookingModel,
       aggregation,
-      [],
       page,
       limit,
-    );
+    });
 
     const populatedData = await Promise.all(
       paginated.data.map(async (b: any) => {
