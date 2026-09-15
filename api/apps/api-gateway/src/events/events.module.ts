@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { EventsController } from './events.controller';
 
@@ -7,13 +8,14 @@ import { EventsController } from './events.controller';
   providers: [
     {
       provide: 'EVENT_SERVICE',
-      useFactory: () =>
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
         ClientProxyFactory.create({
           transport: Transport.KAFKA,
           options: {
             client: {
               clientId: 'event-gateway',
-              brokers: ['localhost:9092'],
+              brokers: [configService.get<string>('KAFKA_BROKERS') || 'localhost:9092'],
             },
             consumer: {
               groupId: 'event-gateway-consumer',
@@ -23,13 +25,14 @@ import { EventsController } from './events.controller';
     },
     {
       provide: 'BOOKING_SERVICE',
-      useFactory: () =>
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
         ClientProxyFactory.create({
           transport: Transport.KAFKA,
           options: {
             client: {
               clientId: 'booking-gateway',
-              brokers: ['localhost:9092'],
+              brokers: [configService.get<string>('KAFKA_BROKERS') || 'localhost:9092'],
             },
             consumer: {
               groupId: 'booking-events-gateway-consumer',

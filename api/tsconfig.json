@@ -26,7 +26,6 @@
     "strictPropertyInitialization": false,
 
     "types": ["vitest/globals", "node"],
-    "ignoreDeprecations": "6.0",
     "baseUrl": "./",
     "paths": {
       "@app/common": ["libs/common/src"],

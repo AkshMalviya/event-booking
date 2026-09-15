@@ -6,7 +6,7 @@ import {
   ClientKafka,
 } from '@nestjs/microservices';
 import { APP_GUARD } from '@nestjs/core';
-
+import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
@@ -23,13 +23,16 @@ import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
     AuthService,
     {
       provide: 'AUTH_SERVICE',
-      useFactory: () =>
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
         ClientProxyFactory.create({
           transport: Transport.KAFKA,
           options: {
             client: {
               clientId: 'auth-gateway',
-              brokers: ['localhost:9092'],
+              brokers: [
+                configService.get<string>('KAFKA_BROKERS') || 'localhost:9092',
+              ],
             },
             consumer: {
               groupId: 'auth-gateway-consumer',

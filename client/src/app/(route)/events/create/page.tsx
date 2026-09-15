@@ -48,6 +48,7 @@ export default function CreateEventPage() {
       availableSeats: 5,
       price: 0,
       tags: "",
+      idempotencyKey: crypto.randomUUID(),
     },
     validate: yupResolver(createEventSchema),
   });
@@ -104,6 +105,7 @@ export default function CreateEventPage() {
       price: Number(values.price),
       tags: tagsArray,
       image: imageFile,
+      idempotencyKey: values.idempotencyKey,
     };
 
     createEventMutation.mutate(payload, {

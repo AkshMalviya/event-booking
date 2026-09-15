@@ -4,7 +4,7 @@ import { API_URLS } from "@/hooks/api-urls";
 import { CreateEventPayload, EventItem } from "../types";
 import { queryClient } from "@/app/providers";
 
-const createEvent = (payload: CreateEventPayload | FormData) => {
+const createEvent = (payload: CreateEventPayload) => {
   let formData: FormData;
 
   if (payload instanceof FormData) {
@@ -30,12 +30,15 @@ const createEvent = (payload: CreateEventPayload | FormData) => {
   return request.post<EventItem>(API_URLS.EVENTS.CREATE, formData, {
     headers: {
       "Content-Type": undefined,
+      ...(payload && {
+        "x-idempotency-key": payload.idempotencyKey,
+      }),
     },
   });
 };
 
 export function useCreateEventMutation() {
-  return useMutation<EventItem, ApiError, CreateEventPayload | FormData>({
+  return useMutation<EventItem, ApiError, CreateEventPayload>({
     mutationFn: createEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events-infinite"] });

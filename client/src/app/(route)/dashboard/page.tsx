@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Container,
   Title,
@@ -21,21 +21,26 @@ import { useInfiniteEventsQuery } from "@/hooks/events/query/useInfiniteEventsQu
 import { FiPlus, FiSearch, FiFilter, FiCheck } from "react-icons/fi";
 import DashboardCard from "@/components/ui/dashboard-card/DashboardCard";
 import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
-import { useDebouncedValue } from "@mantine/hooks";
 import { EventItem } from "@/hooks/events/types";
+import { useSearchParameterFilter } from "@/hooks/common/useSearchParameterFilter";
+import { useDebouncedValue } from "@mantine/hooks";
+
+type TTimeline = "upcoming" | "ongoing" | "past";
+type TSortOrder = "asc" | "desc";
 
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAppSelector((state) => state.user);
 
-  const [search, setSearch] = React.useState("");
-  const [debouncedSearch] = useDebouncedValue(search, 800);
-  const [isFree, setIsFree] = React.useState(false);
-  const [sortBy, setSortBy] = React.useState<string | null>("startDate");
-  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
-  const [timeline, setTimeline] = React.useState<
-    "upcoming" | "ongoing" | "past"
-  >("upcoming");
+  const { filters, updateFilter, resetFilters } = useSearchParameterFilter({
+    search: "",
+    isFree: false,
+    sortBy: "startDate",
+    sortOrder: "asc" as TSortOrder,
+    timeline: "upcoming" as TTimeline,
+  });
+
+  const [debouncedSearch] = useDebouncedValue(filters.search, 800);
 
   const {
     data,
@@ -47,14 +52,14 @@ export default function DashboardPage() {
     isFetchingNextPage,
   } = useInfiniteEventsQuery({
     search: debouncedSearch || undefined,
-    isFree: isFree || undefined,
-    sortBy: sortBy || undefined,
-    sortOrder: sortOrder || undefined,
-    timeline,
+    isFree: filters.isFree || undefined,
+    sortBy: filters.sortBy || undefined,
+    sortOrder: filters.sortOrder || undefined,
+    timeline: filters.timeline,
     limit: 9,
   });
 
-  const events = React.useMemo(() => {
+  const events = useMemo(() => {
     return data?.pages.flatMap((page) => page.data) || [];
   }, [data]);
 
@@ -74,7 +79,6 @@ export default function DashboardPage() {
   return (
     <Container size="xl" py="lg">
       <Stack gap="lg">
-        {/* User Greeting and Create Event Header */}
         <Group justify="space-between" align="center" wrap="wrap">
           <Stack gap={2}>
             <Title order={2} fw={700}>
@@ -98,16 +102,14 @@ export default function DashboardPage() {
           <TextInput
             placeholder="Search events by title, description, or tags..."
             leftSection={<FiSearch size={16} />}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
+            value={filters.search}
+            onChange={(e) => updateFilter({ search: e.currentTarget.value })}
             style={{ flex: 1, minWidth: 250 }}
           />
           <Group>
             <Select
-              value={timeline}
-              onChange={(v) =>
-                setTimeline(v as "upcoming" | "ongoing" | "past")
-              }
+              value={filters.timeline}
+              onChange={(v) => updateFilter({ timeline: v as TTimeline })}
               data={[
                 { value: "upcoming", label: "Upcoming" },
                 { value: "ongoing", label: "Ongoing" },
@@ -118,8 +120,10 @@ export default function DashboardPage() {
             />
             <Switch
               label="Free Events Only"
-              checked={isFree}
-              onChange={(e) => setIsFree(e.currentTarget.checked)}
+              checked={filters.isFree}
+              onChange={(e) =>
+                updateFilter({ isFree: e.currentTarget.checked })
+              }
             />
 
             <Menu shadow="md" width={220} position="bottom-end">
@@ -132,12 +136,12 @@ export default function DashboardPage() {
               <Menu.Dropdown>
                 <Menu.Label>Price</Menu.Label>
                 <Menu.Item
-                  onClick={() => {
-                    setSortBy("price");
-                    setSortOrder("asc");
-                  }}
+                  onClick={() =>
+                    updateFilter({ sortBy: "price", sortOrder: "asc" })
+                  }
                   rightSection={
-                    sortBy === "price" && sortOrder === "asc" ? (
+                    filters.sortBy === "price" &&
+                    filters.sortOrder === "asc" ? (
                       <FiCheck size={14} />
                     ) : null
                   }
@@ -145,12 +149,12 @@ export default function DashboardPage() {
                   Low to High
                 </Menu.Item>
                 <Menu.Item
-                  onClick={() => {
-                    setSortBy("price");
-                    setSortOrder("desc");
-                  }}
+                  onClick={() =>
+                    updateFilter({ sortBy: "price", sortOrder: "desc" })
+                  }
                   rightSection={
-                    sortBy === "price" && sortOrder === "desc" ? (
+                    filters.sortBy === "price" &&
+                    filters.sortOrder === "desc" ? (
                       <FiCheck size={14} />
                     ) : null
                   }
@@ -162,12 +166,12 @@ export default function DashboardPage() {
 
                 <Menu.Label>Date</Menu.Label>
                 <Menu.Item
-                  onClick={() => {
-                    setSortBy("startDate");
-                    setSortOrder("desc");
-                  }}
+                  onClick={() =>
+                    updateFilter({ sortBy: "startDate", sortOrder: "desc" })
+                  }
                   rightSection={
-                    sortBy === "startDate" && sortOrder === "desc" ? (
+                    filters.sortBy === "startDate" &&
+                    filters.sortOrder === "desc" ? (
                       <FiCheck size={14} />
                     ) : null
                   }
@@ -175,12 +179,12 @@ export default function DashboardPage() {
                   New to Old
                 </Menu.Item>
                 <Menu.Item
-                  onClick={() => {
-                    setSortBy("startDate");
-                    setSortOrder("asc");
-                  }}
+                  onClick={() =>
+                    updateFilter({ sortBy: "startDate", sortOrder: "asc" })
+                  }
                   rightSection={
-                    sortBy === "startDate" && sortOrder === "asc" ? (
+                    filters.sortBy === "startDate" &&
+                    filters.sortOrder === "asc" ? (
                       <FiCheck size={14} />
                     ) : null
                   }
@@ -189,6 +193,10 @@ export default function DashboardPage() {
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
+
+            <Button variant="filled" color="gray" onClick={resetFilters}>
+              Reset
+            </Button>
           </Group>
         </Group>
 

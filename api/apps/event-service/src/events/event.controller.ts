@@ -11,8 +11,8 @@ export class EventController {
   constructor(private readonly eventsService: EventsService) {}
 
   @MessagePattern(EVENT_PATTERNS.CREATE)
-  create(@Payload() data: { event: CreateEventDto; userId: string }) {
-    return this.eventsService.create(data.event, data.userId);
+  create(@Payload() data: { event: CreateEventDto; userId: string; idempotencyKey?: string }) {
+    return this.eventsService.create(data.event, data.userId, data.idempotencyKey);
   }
 
   @MessagePattern(EVENT_PATTERNS.UPDATE)

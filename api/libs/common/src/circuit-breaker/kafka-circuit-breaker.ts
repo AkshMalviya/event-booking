@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import CircuitBreaker from 'opossum';
-import { lastValueFrom, Observable } from 'rxjs';
+import { lastValueFrom, Observable, retry } from 'rxjs';
 
 @Injectable()
 export class KafkaCircuitBreaker {
@@ -17,26 +17,44 @@ export class KafkaCircuitBreaker {
   private getBreaker(topic: string): CircuitBreaker {
     if (!this.breakers.has(topic)) {
       const options = {
-        timeout: 3000, // If our function takes longer than 3 seconds, trigger a failure
+        timeout: 4000, // If our function takes longer than 4 seconds, trigger a failure
         errorThresholdPercentage: 50, // When 50% of requests fail, trip the circuit
         resetTimeout: 30000, // After 30 seconds, try again
         volumeThreshold: 5,
+        rollingCountTimeout: 60000, // Remember failures for 60 seconds
+        errorFilter: (err: any) => {
+          const status =
+            err?.status || err?.statusCode || err?.response?.statusCode;
+          return status && status < 500;
+        },
       };
 
       const action = async (pattern: any, data: any) => {
-        return lastValueFrom(this.kafkaClient.send(pattern, data));
+        return lastValueFrom(
+          this.kafkaClient.send(pattern, data).pipe(
+            retry({
+              count: 3,
+              delay: 1000,
+            }),
+          ),
+        );
       };
 
       const breaker = new CircuitBreaker(action, options);
 
-      breaker.fallback((pattern: any, data: any, error: Error) => {
-        this.logger.error(
+      breaker.fallback((_: unknown, __: unknown, error: any) => {
+        const status =
+          error?.status || error?.statusCode || error?.response?.statusCode;
+        if (status && status < 500) {
+          throw error;
+        }
+
+        this.logger.warn(
           `[FALLBACK] Circuit breaker fallback triggered for topic: ${topic}. Reason: ${error.message}`,
         );
         const exception = new ServiceUnavailableException(
           `Service unavailable for topic: ${topic}`,
         );
-        // Ensure status code is present for standard error handlers just in case instanceof fails
         (exception as any).statusCode = 503;
         (exception as any).status = 503;
         throw exception;
@@ -59,20 +77,10 @@ export class KafkaCircuitBreaker {
         ),
       );
 
-      // Individual request logs
-      breaker.on('failure', (err) =>
-        this.logger.error(
-          `❌ Request FAILED for ${topic}. Error: ${err.message}`,
-        ),
-      );
-      breaker.on('success', () =>
-        this.logger.log(`✅ Request SUCCESS for ${topic}`),
-      );
-
       this.breakers.set(topic, breaker);
     }
 
-    return this.breakers.get(topic);
+    return this.breakers.get(topic)!;
   }
 
   async send<TResult = any, TInput = any>(
@@ -82,7 +90,7 @@ export class KafkaCircuitBreaker {
     const topic =
       typeof pattern === 'string' ? pattern : JSON.stringify(pattern);
     const breaker = this.getBreaker(topic);
-    return breaker.fire(pattern, data);
+    return breaker.fire(pattern, data) as Promise<TResult>;
   }
 
   emit<TResult = any, TInput = any>(

@@ -1,5 +1,6 @@
 import { PaginationService } from '@app/common/services/pagination.service';
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BookingsController } from './bookings.controller';
@@ -21,13 +22,14 @@ import { Booking, BookingSchema } from './schema/booking.schema';
     PaginationService,
     {
       provide: 'EVENT_SERVICE',
-      useFactory: () =>
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
         ClientProxyFactory.create({
           transport: Transport.KAFKA,
           options: {
             client: {
               clientId: 'event-booking-client',
-              brokers: ['localhost:9092'],
+              brokers: [configService.get<string>('KAFKA_BROKERS') || 'localhost:9092'],
             },
             consumer: {
               groupId: 'event-booking-svc-consumer',
@@ -37,13 +39,14 @@ import { Booking, BookingSchema } from './schema/booking.schema';
     },
     {
       provide: 'AUTH_SERVICE',
-      useFactory: () =>
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
         ClientProxyFactory.create({
           transport: Transport.KAFKA,
           options: {
             client: {
               clientId: 'auth-booking-client',
-              brokers: ['localhost:9092'],
+              brokers: [configService.get<string>('KAFKA_BROKERS') || 'localhost:9092'],
             },
             consumer: {
               groupId: 'auth-booking-svc-consumer',

@@ -18,11 +18,14 @@ import { useCancelBookingMutation } from "@/hooks/bookings/mutation/useCancelBoo
 import { BookingItem } from "@/hooks/bookings/types";
 import BookingCard from "@/components/ui/booking-card/BookingCard";
 import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
+import { useSearchParameterFilter } from "@/hooks/common/useSearchParameterFilter";
+
+type TFilter = "all" | "ongoing" | "upcoming" | "past";
 
 export default function BookingsPage() {
-  const [filter, setFilter] = React.useState<
-    "all" | "ongoing" | "upcoming" | "past"
-  >("all");
+  const { filters, updateFilter } = useSearchParameterFilter({
+    filter: "all" as TFilter,
+  });
 
   const {
     data,
@@ -32,7 +35,7 @@ export default function BookingsPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteMyBookingsQuery({ filter, limit: 9 });
+  } = useInfiniteMyBookingsQuery({ filter: filters.filter, limit: 9 });
 
   const bookings = React.useMemo(() => {
     return data?.pages.flatMap((page) => page.data) || [];
@@ -103,10 +106,8 @@ export default function BookingsPage() {
         </Group>
 
         <SegmentedControl
-          value={filter}
-          onChange={(val) =>
-            setFilter(val as "all" | "ongoing" | "upcoming" | "past")
-          }
+          value={filters.filter}
+          onChange={(val) => updateFilter({ filter: val })}
           data={[
             { label: "All Bookings", value: "all" },
             { label: "Ongoing", value: "ongoing" },
@@ -124,7 +125,7 @@ export default function BookingsPage() {
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
           fetchNextPage={fetchNextPage}
-          emptyMessage={`No ${filter === "all" ? "" : filter} bookings found.`}
+          emptyMessage={`No ${filters.filter === "all" ? "" : filters.filter} bookings found.`}
           gridComponent={SimpleGrid}
           gridProps={{ cols: { base: 1, sm: 2, lg: 3 }, spacing: "lg" }}
           renderItem={(booking) => {

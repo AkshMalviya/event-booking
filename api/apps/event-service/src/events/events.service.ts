@@ -48,9 +48,16 @@ export class EventsService {
     return slug;
   }
 
-  async create(data: CreateEventDto, userId: string) {
+  async create(data: CreateEventDto, userId: string, idempotencyKey?: string) {
     if (!userId) {
       throw new UnauthorizedException('Authenticated user is required');
+    }
+
+    if (idempotencyKey) {
+      const existingEvent = await this.eventModel.findOne({ idempotencyKey, userId });
+      if (existingEvent) {
+        return existingEvent;
+      }
     }
 
     const startDate = new Date(data.startDate);
@@ -66,19 +73,27 @@ export class EventsService {
 
     const slug = await this.generateUniqueSlug(data.title);
 
-    return this.eventModel.create({
-      title: data.title,
-      description: data.description,
-      availableSeats: data.availableSeats,
-      price: data.price,
-      image: data.image,
-      tags: data.tags ?? [],
-      userId,
-      slug,
-      startDate,
-      endDate,
-      registeredCount: 0,
-    });
+    try {
+      return await this.eventModel.create({
+        title: data.title,
+        description: data.description,
+        availableSeats: data.availableSeats,
+        price: data.price,
+        image: data.image,
+        tags: data.tags ?? [],
+        userId,
+        slug,
+        startDate,
+        endDate,
+        registeredCount: 0,
+        idempotencyKey,
+      });
+    } catch (error: any) {
+      if (error.code === 11000 && error.keyPattern && error.keyPattern.idempotencyKey) {
+        return this.eventModel.findOne({ idempotencyKey, userId });
+      }
+      throw error;
+    }
   }
 
   async update(eventId: string, userId: string, data: UpdateEventDto) {

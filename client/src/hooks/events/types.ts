@@ -25,6 +25,7 @@ export interface CreateEventPayload {
   price: number;
   tags?: string[];
   image?: File | null;
+  idempotencyKey?: string;
 }
 
 export interface UpdateEventPayload {

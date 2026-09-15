@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   Query,
   OnModuleInit,
+  Headers,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import type { Request } from 'express';
@@ -132,6 +133,7 @@ export class EventsController implements OnModuleInit {
   create(
     @Body() data: CreateEventDto,
     @Req() request: AuthenticatedRequest,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
     @UploadedFile() file?: any,
   ) {
     const imageUrl = file ? `/uploads/${file.filename}` : data.image;
@@ -158,6 +160,7 @@ export class EventsController implements OnModuleInit {
         image: imageUrl,
       },
       userId: request.user.id,
+      idempotencyKey,
     });
   }
 }

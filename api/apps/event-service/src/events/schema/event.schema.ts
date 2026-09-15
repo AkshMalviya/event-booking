@@ -45,6 +45,9 @@ export class Event {
 
   @Prop({ required: true, min: 0, default: 0 })
   registeredCount: number;
+
+  @Prop({ type: String, unique: true, sparse: true, index: true })
+  idempotencyKey?: string;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);
