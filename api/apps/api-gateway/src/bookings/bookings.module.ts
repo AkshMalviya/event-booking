@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
+import { Partitioners } from 'kafkajs';
+import { KAFKA_RETRY_CONFIG } from '@app/common';
 
 import { BookingsController } from './bookings.controller';
 
@@ -19,6 +21,10 @@ import { BookingsController } from './bookings.controller';
               brokers: [
                 configService.get<string>('KAFKA_BROKERS') || 'localhost:9092',
               ],
+              retry: KAFKA_RETRY_CONFIG,
+            },
+            producer: {
+              createPartitioner: Partitioners.LegacyPartitioner,
             },
             consumer: {
               groupId: 'booking-gateway-consumer',

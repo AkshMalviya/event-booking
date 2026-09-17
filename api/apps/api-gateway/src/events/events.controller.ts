@@ -52,8 +52,12 @@ export class EventsController implements OnModuleInit {
     Object.values(BOOKING_PATTERNS).forEach((pattern) => {
       this.bookingClient.subscribeToResponseOf(pattern);
     });
-    await this.eventClient.connect();
-    await this.bookingClient.connect();
+    try {
+      await this.eventClient.connect();
+      await this.bookingClient.connect();
+    } catch (err) {
+      console.warn('Kafka connection delayed:', err.message);
+    }
   }
 
   @Get()

@@ -39,7 +39,11 @@ export class BookingsController implements OnModuleInit {
     Object.values(BOOKING_PATTERNS).forEach((pattern) => {
       this.bookingClient.subscribeToResponseOf(pattern);
     });
-    await this.bookingClient.connect();
+    try {
+      await this.bookingClient.connect();
+    } catch (err) {
+      console.warn('Kafka connection delayed:', err.message);
+    }
   }
 
   @Post()

@@ -11,6 +11,8 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
+import { Partitioners } from 'kafkajs';
+import { KAFKA_RETRY_CONFIG } from '@app/common';
 
 @Module({
   imports: [
@@ -33,6 +35,10 @@ import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
               brokers: [
                 configService.get<string>('KAFKA_BROKERS') || 'localhost:9092',
               ],
+              retry: KAFKA_RETRY_CONFIG,
+            },
+            producer: {
+              createPartitioner: Partitioners.LegacyPartitioner,
             },
             consumer: {
               groupId: 'auth-gateway-consumer',
@@ -53,6 +59,10 @@ export class AuthModule implements OnModuleInit {
     Object.values(AUTH_PATTERNS).forEach((pattern) => {
       this.client.subscribeToResponseOf(pattern);
     });
-    await this.client.connect();
+    try {
+      await this.client.connect();
+    } catch (err) {
+      console.warn('Kafka connection delayed:', err.message);
+    }
   }
 }

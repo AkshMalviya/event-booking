@@ -40,7 +40,11 @@ export class AuthGuard implements CanActivate, OnModuleInit {
     Object.values(AUTH_PATTERNS).forEach((pattern) => {
       this.authClient.subscribeToResponseOf(pattern);
     });
-    await this.authClient.connect();
+    try {
+      await this.authClient.connect();
+    } catch (err) {
+      console.warn('Kafka connection delayed:', err.message);
+    }
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -64,9 +68,12 @@ export class AuthGuard implements CanActivate, OnModuleInit {
       const payload =
         await this.jwtService.verifyAsync<AccessTokenPayload>(token);
 
-      request.user = await this.breaker.send<UserEntity>(AUTH_PATTERNS.GET_USER, {
-        userId: payload.sub,
-      });
+      request.user = await this.breaker.send<UserEntity>(
+        AUTH_PATTERNS.GET_USER,
+        {
+          userId: payload.sub,
+        },
+      );
 
       return true;
     } catch {

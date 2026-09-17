@@ -32,7 +32,11 @@ export class AuthController implements OnModuleInit {
     Object.values(AUTH_PATTERNS).forEach((pattern) => {
       this.authClient.subscribeToResponseOf(pattern);
     });
-    await this.authClient.connect();
+    try {
+      await this.authClient.connect();
+    } catch (err) {
+      console.warn('Kafka connection delayed:', err.message);
+    }
   }
 
   @Post('register')
@@ -47,10 +51,10 @@ export class AuthController implements OnModuleInit {
     @Body() data: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.breaker.send<{ accessToken: string; user: UserEntity }>(
-      AUTH_PATTERNS.LOGIN,
-      data,
-    );
+    const result = await this.breaker.send<{
+      accessToken: string;
+      user: UserEntity;
+    }>(AUTH_PATTERNS.LOGIN, data);
 
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
