@@ -1,10 +1,10 @@
+import { PaginationService } from '@app/common/services/pagination.service';
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { Booking, BookingSchema } from './schema/booking.schema';
+import { MongooseModule } from '@nestjs/mongoose';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
-import { PaginationService } from '@app/common/services/pagination.service';
+import { Booking, BookingSchema } from './schema/booking.schema';
 
 @Module({
   imports: [
@@ -30,7 +30,7 @@ import { PaginationService } from '@app/common/services/pagination.service';
               brokers: ['localhost:9092'],
             },
             consumer: {
-              groupId: 'event-consumer',
+              groupId: 'event-booking-svc-consumer',
             },
           },
         }),
@@ -46,7 +46,7 @@ import { PaginationService } from '@app/common/services/pagination.service';
               brokers: ['localhost:9092'],
             },
             consumer: {
-              groupId: 'auth-consumer',
+              groupId: 'auth-booking-svc-consumer',
             },
           },
         }),

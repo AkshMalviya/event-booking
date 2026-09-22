@@ -5,10 +5,11 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage, Types } from 'mongoose';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { Booking, BookingDocument } from './schema/booking.schema';
 import { BookingStatus } from '@app/contracts/bookings/booking-status.enum';
@@ -22,16 +23,27 @@ import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
 import { PaginationService } from '@app/common/services/pagination.service';
 
 @Injectable()
-export class BookingsService {
+export class BookingsService implements OnModuleInit {
   constructor(
     @InjectModel(Booking.name)
     private readonly bookingModel: Model<BookingDocument>,
     @Inject('EVENT_SERVICE')
-    private readonly eventClient: ClientProxy,
+    private readonly eventClient: ClientKafka,
     @Inject('AUTH_SERVICE')
-    private readonly authClient: ClientProxy,
+    private readonly authClient: ClientKafka,
     private readonly paginationService: PaginationService,
   ) {}
+
+  async onModuleInit() {
+    Object.values(EVENT_PATTERNS).forEach((pattern) => {
+      this.eventClient.subscribeToResponseOf(pattern);
+    });
+    Object.values(AUTH_PATTERNS).forEach((pattern) => {
+      this.authClient.subscribeToResponseOf(pattern);
+    });
+    await this.eventClient.connect();
+    await this.authClient.connect();
+  }
 
   async create(data: CreateBookingDto, userId: string) {
     if (!userId) {
@@ -134,7 +146,9 @@ export class BookingsService {
             timeline: filter,
           }),
         );
-        matchStage.eventId = { $in: matchedEventIds.map((id: string) => new Types.ObjectId(id)) };
+        matchStage.eventId = {
+          $in: matchedEventIds.map((id: string) => new Types.ObjectId(id)),
+        };
       } else {
         matchStage.eventId = { $in: [] };
       }
@@ -145,13 +159,12 @@ export class BookingsService {
       { $sort: { createdAt: -1 } },
     ];
 
-    const paginated = await this.paginationService.aggregate(
-      this.bookingModel,
+    const paginated = await this.paginationService.aggregate({
+      model: this.bookingModel,
       aggregation,
-      [],
       page,
       limit,
-    );
+    });
 
     const populatedData = await Promise.all(
       paginated.data.map(async (b: any) => {
@@ -280,7 +293,9 @@ export class BookingsService {
     }
 
     if (event.userId !== userId) {
-      throw new UnauthorizedException('You can only view bookings for your own events');
+      throw new UnauthorizedException(
+        'You can only view bookings for your own events',
+      );
     }
 
     const bookings = await this.bookingModel

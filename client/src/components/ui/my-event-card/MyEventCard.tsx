@@ -55,6 +55,7 @@ const MyEventCard = ({ event }: { event: EventItem }) => {
       shadow={"sm"}
       radius="lg"
       p={0}
+      mb={"md"}
       style={{
         transition: "box-shadow 0.2s ease, transform 0.2s ease",
         overflow: "hidden",

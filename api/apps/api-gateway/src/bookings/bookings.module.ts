@@ -10,10 +10,15 @@ import { BookingsController } from './bookings.controller';
       provide: 'BOOKING_SERVICE',
       useFactory: () =>
         ClientProxyFactory.create({
-          transport: Transport.TCP,
+          transport: Transport.KAFKA,
           options: {
-            host: 'localhost',
-            port: 4003,
+            client: {
+              clientId: 'booking-gateway-client',
+              brokers: ['localhost:9092'],
+            },
+            consumer: {
+              groupId: 'booking-gateway-consumer',
+            },
           },
         }),
     },

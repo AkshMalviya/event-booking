@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const user = useAppSelector((state) => state.user);
 
   const [search, setSearch] = React.useState("");
-  const [debouncedSearch] = useDebouncedValue(search, 500);
+  const [debouncedSearch] = useDebouncedValue(search, 800);
   const [isFree, setIsFree] = React.useState(false);
   const [sortBy, setSortBy] = React.useState<string | null>("startDate");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");

@@ -10,8 +10,9 @@ import {
   UploadedFile,
   UseInterceptors,
   Query,
+  OnModuleInit,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 
@@ -29,13 +30,24 @@ type AuthenticatedRequest = Request & {
 };
 
 @Controller('events')
-export class EventsController {
+export class EventsController implements OnModuleInit {
   constructor(
     @Inject('EVENT_SERVICE')
-    private readonly eventClient: ClientProxy,
+    private readonly eventClient: ClientKafka,
     @Inject('BOOKING_SERVICE')
-    private readonly bookingClient: ClientProxy,
+    private readonly bookingClient: ClientKafka,
   ) {}
+
+  async onModuleInit() {
+    Object.values(EVENT_PATTERNS).forEach((pattern) => {
+      this.eventClient.subscribeToResponseOf(pattern);
+    });
+    Object.values(BOOKING_PATTERNS).forEach((pattern) => {
+      this.bookingClient.subscribeToResponseOf(pattern);
+    });
+    await this.eventClient.connect();
+    await this.bookingClient.connect();
+  }
 
   @Get()
   findAll(@Query() query: EventQueryDto) {

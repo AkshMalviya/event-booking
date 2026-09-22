@@ -8,8 +8,9 @@ import {
   Post,
   Req,
   Query,
+  OnModuleInit,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 
@@ -24,17 +25,21 @@ type AuthenticatedRequest = Request & {
 };
 
 @Controller('bookings')
-export class BookingsController {
+export class BookingsController implements OnModuleInit {
   constructor(
     @Inject('BOOKING_SERVICE')
-    private readonly bookingClient: ClientProxy,
+    private readonly bookingClient: ClientKafka,
   ) {}
 
+  async onModuleInit() {
+    Object.values(BOOKING_PATTERNS).forEach((pattern) => {
+      this.bookingClient.subscribeToResponseOf(pattern);
+    });
+    await this.bookingClient.connect();
+  }
+
   @Post()
-  create(
-    @Body() body: CreateBookingDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  create(@Body() body: CreateBookingDto, @Req() request: AuthenticatedRequest) {
     return firstValueFrom(
       this.bookingClient.send<BookingEntity>(BOOKING_PATTERNS.CREATE, {
         booking: body,
@@ -44,7 +49,10 @@ export class BookingsController {
   }
 
   @Get('my-bookings')
-  findUserBookings(@Req() request: AuthenticatedRequest, @Query() query: BookingQueryDto) {
+  findUserBookings(
+    @Req() request: AuthenticatedRequest,
+    @Query() query: BookingQueryDto,
+  ) {
     return firstValueFrom(
       this.bookingClient.send<any>(BOOKING_PATTERNS.FIND_ALL_USER, {
         userId: request.user.id,

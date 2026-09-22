@@ -11,17 +11,22 @@ export interface PaginationResult<T> {
   };
 }
 
+interface IProps {
+  model: Model<any>,
+    aggregation: PipelineStage[],
+    afterPagination?: PipelineStage[],
+    page?: number,
+    limit?: number,
+}
+
 @Injectable()
 export class PaginationService {
   async aggregate<T>(
-    model: Model<any>,
-    aggregation: PipelineStage[],
-    afterPagination: PipelineStage[] = [],
-    page: number = 1,
-    limit: number = 9,
+    props: IProps,
   ): Promise<PaginationResult<T>> {
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 9;
+    const { model, aggregation, afterPagination = [], page = 1, limit = 9 } = props
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
 
     const pipeline: PipelineStage[] = [

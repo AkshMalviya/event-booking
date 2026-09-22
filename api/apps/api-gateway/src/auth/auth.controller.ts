@@ -1,5 +1,14 @@
-import { Body, Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Req,
+  Res,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request, Response } from 'express';
 import { Public } from './public.decorator';
@@ -9,11 +18,18 @@ import { LoginDto } from '@app/contracts/auth/login.dto';
 import { UserEntity } from '@app/contracts/auth/user.entity';
 
 @Controller('auth')
-export class AuthController {
+export class AuthController implements OnModuleInit {
   constructor(
     @Inject('AUTH_SERVICE')
-    private readonly authClient: ClientProxy,
+    private readonly authClient: ClientKafka,
   ) {}
+
+  async onModuleInit() {
+    Object.values(AUTH_PATTERNS).forEach((pattern) => {
+      this.authClient.subscribeToResponseOf(pattern);
+    });
+    await this.authClient.connect();
+  }
 
   @Post('register')
   @Public()

@@ -1,11 +1,16 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit, Inject } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
+import {
+  ClientProxyFactory,
+  Transport,
+  ClientKafka,
+} from '@nestjs/microservices';
 import { APP_GUARD } from '@nestjs/core';
 
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
+import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
 
 @Module({
   imports: [
@@ -20,10 +25,15 @@ import { AuthService } from './auth.service';
       provide: 'AUTH_SERVICE',
       useFactory: () =>
         ClientProxyFactory.create({
-          transport: Transport.TCP,
+          transport: Transport.KAFKA,
           options: {
-            host: 'localhost',
-            port: 4001,
+            client: {
+              clientId: 'auth-gateway',
+              brokers: ['localhost:9092'],
+            },
+            consumer: {
+              groupId: 'auth-gateway-consumer',
+            },
           },
         }),
     },
@@ -33,4 +43,13 @@ import { AuthService } from './auth.service';
     },
   ],
 })
-export class AuthModule {}
+export class AuthModule implements OnModuleInit {
+  constructor(@Inject('AUTH_SERVICE') private readonly client: ClientKafka) {}
+
+  async onModuleInit() {
+    Object.values(AUTH_PATTERNS).forEach((pattern) => {
+      this.client.subscribeToResponseOf(pattern);
+    });
+    await this.client.connect();
+  }
+}
