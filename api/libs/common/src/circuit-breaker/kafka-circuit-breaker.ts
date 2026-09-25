@@ -17,7 +17,7 @@ export class KafkaCircuitBreaker {
   private getBreaker(topic: string): CircuitBreaker {
     if (!this.breakers.has(topic)) {
       const options = {
-        timeout: 4000, // If our function takes longer than 4 seconds, trigger a failure
+        timeout: 15000, // Increased to 15 seconds to handle Kafka consumer rebalancing
         errorThresholdPercentage: 50, // When 50% of requests fail, trip the circuit
         resetTimeout: 30000, // After 30 seconds, try again
         volumeThreshold: 5,

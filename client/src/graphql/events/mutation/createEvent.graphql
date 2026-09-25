@@ -1,0 +1,18 @@
+mutation CreateEvent($data: CreateEventDto!, $idempotencyKey: String) {
+  createEvent(data: $data, idempotencyKey: $idempotencyKey) {
+    id
+    userId
+    title
+    slug
+    image
+    description
+    startDate
+    endDate
+    availableSeats
+    price
+    tags
+    registeredCount
+    createdAt
+    updatedAt
+  }
+}

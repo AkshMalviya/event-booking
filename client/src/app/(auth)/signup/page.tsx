@@ -12,15 +12,16 @@ import {
 } from "@mantine/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSignupMutation } from "@/hooks/auth/mutation/useSignupMutation";
+import { useMutation } from "@apollo/client/react";
 import { notifications } from "@mantine/notifications";
 import { signupSchema } from "@/validation/auth.schema";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { FiUser, FiMail, FiLock, FiUserPlus } from "react-icons/fi";
+import { SignupDocument } from "@/generated/graphql";
 
 const Signup = () => {
   const router = useRouter();
-  const signupMutation = useSignupMutation();
+  const [signupMutation, { loading }] = useMutation(SignupDocument);
 
   const form = useForm({
     initialValues: {
@@ -32,8 +33,9 @@ const Signup = () => {
   });
 
   const handleSubmit = (values: typeof form.values) => {
-    signupMutation.mutate(values, {
-      onSuccess: () => {
+    signupMutation({
+      variables: { input: values },
+      onCompleted: () => {
         router.push("/login");
         notifications.show({
           title: "Successfully Signed Up.",
@@ -104,7 +106,7 @@ const Signup = () => {
             radius="md"
             size="md"
             leftSection={<FiUserPlus size={16} />}
-            loading={signupMutation.isPending}
+            loading={loading}
           >
             Signup
           </Button>

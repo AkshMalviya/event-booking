@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Container,
   Title,
@@ -17,11 +17,16 @@ import {
 } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
-import { useInfiniteEventsQuery } from "@/hooks/events/query/useInfiniteEventsQuery";
+import { useQuery } from "@apollo/client/react";
+import {
+  EventsDocument,
+  EventEntity,
+  SortOrder,
+  EventTimeline,
+} from "@/generated/graphql";
 import { FiPlus, FiSearch, FiFilter, FiCheck } from "react-icons/fi";
 import DashboardCard from "@/components/ui/dashboard-card/DashboardCard";
 import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
-import { EventItem } from "@/hooks/events/types";
 import { useSearchParameterFilter } from "@/hooks/common/useSearchParameterFilter";
 import { useDebouncedValue } from "@mantine/hooks";
 
@@ -31,6 +36,7 @@ type TSortOrder = "asc" | "desc";
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAppSelector((state) => state.user);
+  const [page, setPage] = React.useState(1);
 
   const { filters, updateFilter, resetFilters } = useSearchParameterFilter({
     search: "",
@@ -44,24 +50,64 @@ export default function DashboardPage() {
 
   const {
     data,
-    isLoading,
-    isError,
+    loading: isLoading,
+    error,
     refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteEventsQuery({
-    search: debouncedSearch || undefined,
-    isFree: filters.isFree || undefined,
-    sortBy: filters.sortBy || undefined,
-    sortOrder: filters.sortOrder || undefined,
-    timeline: filters.timeline,
-    limit: 9,
+    fetchMore,
+    networkStatus,
+  } = useQuery(EventsDocument, {
+    variables: {
+      query: {
+        search: debouncedSearch || undefined,
+        isFree: filters.isFree || undefined,
+        sortBy: filters.sortBy || undefined,
+        sortOrder: filters.sortOrder === "asc" ? SortOrder.Asc : SortOrder.Desc,
+        timeline:
+          (filters.timeline?.toUpperCase() as EventTimeline) || undefined,
+        limit: 9,
+        page: 1,
+      },
+    },
+    notifyOnNetworkStatusChange: true,
   });
 
-  const events = useMemo(() => {
-    return data?.pages.flatMap((page) => page.data) || [];
-  }, [data]);
+  const isError = !!error;
+  const isFetchingNextPage = networkStatus === 3;
+  const events = data?.events || [];
+
+  // Since limit is 9, if the last page returned 9 items, there might be more
+  // (In real pagination, the backend should return a total count or hasNextPage)
+  const hasNextPage = events.length > 0 && events.length % 9 === 0;
+
+  const fetchNextPage = async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    await fetchMore({
+      variables: {
+        query: {
+          search: debouncedSearch || undefined,
+          isFree: filters.isFree || undefined,
+          sortBy: filters.sortBy || undefined,
+          sortOrder:
+            filters.sortOrder === "asc" ? SortOrder.Asc : SortOrder.Desc,
+          timeline:
+            (filters.timeline?.toUpperCase() as EventTimeline) || undefined,
+          limit: 9,
+          page: page + 1,
+        },
+      },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult || fetchMoreResult.events.length === 0)
+          return prev;
+        return Object.assign({}, prev, {
+          events: [...prev.events, ...fetchMoreResult.events],
+        });
+      },
+    });
+    setPage((p) => p + 1);
+  };
+
+  // Removing useEffect for page reset as requested
 
   if (isError) {
     return (
@@ -103,13 +149,19 @@ export default function DashboardPage() {
             placeholder="Search events by title, description, or tags..."
             leftSection={<FiSearch size={16} />}
             value={filters.search}
-            onChange={(e) => updateFilter({ search: e.currentTarget.value })}
+            onChange={(e) => {
+              updateFilter({ search: e.currentTarget.value });
+              setPage(1);
+            }}
             style={{ flex: 1, minWidth: 250 }}
           />
           <Group>
             <Select
               value={filters.timeline}
-              onChange={(v) => updateFilter({ timeline: v as TTimeline })}
+              onChange={(v) => {
+                updateFilter({ timeline: v as TTimeline });
+                setPage(1);
+              }}
               data={[
                 { value: "upcoming", label: "Upcoming" },
                 { value: "ongoing", label: "Ongoing" },
@@ -121,9 +173,10 @@ export default function DashboardPage() {
             <Switch
               label="Free Events Only"
               checked={filters.isFree}
-              onChange={(e) =>
-                updateFilter({ isFree: e.currentTarget.checked })
-              }
+              onChange={(e) => {
+                updateFilter({ isFree: e.currentTarget.checked });
+                setPage(1);
+              }}
             />
 
             <Menu shadow="md" width={220} position="bottom-end">
@@ -136,9 +189,10 @@ export default function DashboardPage() {
               <Menu.Dropdown>
                 <Menu.Label>Price</Menu.Label>
                 <Menu.Item
-                  onClick={() =>
-                    updateFilter({ sortBy: "price", sortOrder: "asc" })
-                  }
+                  onClick={() => {
+                    updateFilter({ sortBy: "price", sortOrder: "asc" });
+                    setPage(1);
+                  }}
                   rightSection={
                     filters.sortBy === "price" &&
                     filters.sortOrder === "asc" ? (
@@ -149,9 +203,10 @@ export default function DashboardPage() {
                   Low to High
                 </Menu.Item>
                 <Menu.Item
-                  onClick={() =>
-                    updateFilter({ sortBy: "price", sortOrder: "desc" })
-                  }
+                  onClick={() => {
+                    updateFilter({ sortBy: "price", sortOrder: "desc" });
+                    setPage(1);
+                  }}
                   rightSection={
                     filters.sortBy === "price" &&
                     filters.sortOrder === "desc" ? (
@@ -166,9 +221,10 @@ export default function DashboardPage() {
 
                 <Menu.Label>Date</Menu.Label>
                 <Menu.Item
-                  onClick={() =>
-                    updateFilter({ sortBy: "startDate", sortOrder: "desc" })
-                  }
+                  onClick={() => {
+                    updateFilter({ sortBy: "startDate", sortOrder: "desc" });
+                    setPage(1);
+                  }}
                   rightSection={
                     filters.sortBy === "startDate" &&
                     filters.sortOrder === "desc" ? (
@@ -179,9 +235,10 @@ export default function DashboardPage() {
                   New to Old
                 </Menu.Item>
                 <Menu.Item
-                  onClick={() =>
-                    updateFilter({ sortBy: "startDate", sortOrder: "asc" })
-                  }
+                  onClick={() => {
+                    updateFilter({ sortBy: "startDate", sortOrder: "asc" });
+                    setPage(1);
+                  }}
                   rightSection={
                     filters.sortBy === "startDate" &&
                     filters.sortOrder === "asc" ? (
@@ -194,14 +251,21 @@ export default function DashboardPage() {
               </Menu.Dropdown>
             </Menu>
 
-            <Button variant="filled" color="gray" onClick={resetFilters}>
+            <Button
+              variant="filled"
+              color="gray"
+              onClick={() => {
+                resetFilters();
+                setPage(1);
+              }}
+            >
               Reset
             </Button>
           </Group>
         </Group>
 
         {/* All Events Section */}
-        <InfiniteScrollList<EventItem>
+        <InfiniteScrollList<EventEntity>
           items={events}
           isLoading={isLoading}
           hasNextPage={hasNextPage}
@@ -211,7 +275,7 @@ export default function DashboardPage() {
           gridComponent={SimpleGrid}
           gridProps={{ cols: { base: 1, sm: 2, lg: 3 }, spacing: "lg" }}
           renderItem={(event) => {
-            const eventId = event.id || event._id || "";
+            const eventId = event.id || "";
             const eventSlug = event.slug || eventId;
             return (
               <DashboardCard

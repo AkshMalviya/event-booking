@@ -1,0 +1,3 @@
+mutation Signup($input: SignupDto!) {
+  register(input: $input)
+}

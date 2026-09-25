@@ -11,21 +11,21 @@ import {
 } from "@mantine/core";
 import React, { memo } from "react";
 import { FiArrowRight, FiCalendar } from "react-icons/fi";
-import { EventItem } from "@/hooks/events/types";
+import { EventEntity } from "@/generated/graphql";
 import { getImageUrl } from "@/utils/getImagePath";
 
 interface IProps {
-  event: EventItem;
+  event: EventEntity;
   onViewClick: () => void;
 }
 
 const DashboardCard = ({ event, onViewClick }: IProps) => {
   const seatsLeft = event.availableSeats - (event.registeredCount || 0);
-  const imageUrl = getImageUrl(event.image);
+  const imageUrl = getImageUrl(event.image ?? "");
 
   return (
     <Card
-      key={event._id}
+      key={event.id}
       shadow="sm"
       padding="lg"
       radius="md"
@@ -127,7 +127,7 @@ const DashboardCard = ({ event, onViewClick }: IProps) => {
           <Group gap={6}>
             <FiCalendar size={13} color="var(--mantine-color-dimmed)" />
             <Text size="xs" c="dimmed">
-              {new Date(event.startDate).toLocaleDateString()}
+              {new Date(event.startDate ?? "").toLocaleDateString()}
             </Text>
           </Group>
           <Text

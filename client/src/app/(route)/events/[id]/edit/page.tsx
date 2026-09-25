@@ -22,9 +22,8 @@ import { useForm } from "@mantine/form";
 import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useParams, useRouter } from "next/navigation";
-import { useEventBySlugQuery } from "@/hooks/events/query/useEventBySlugQuery";
-import { useUpdateEventMutation } from "@/hooks/events/mutation/useUpdateEventMutation";
-import { UpdateEventPayload } from "@/hooks/events/types";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { EventBySlugDocument, UpdateEventDocument } from "@/generated/graphql";
 import { API_BASE_URL } from "@/hooks/api-urls";
 import {
   FiUpload,
@@ -40,8 +39,19 @@ export default function EditEventPage() {
   const id = params?.id || "";
   const router = useRouter();
 
-  const { data: event, isLoading, isError } = useEventBySlugQuery(id);
-  const updateEventMutation = useUpdateEventMutation();
+  const {
+    data,
+    loading: isLoading,
+    error,
+  } = useQuery(EventBySlugDocument, {
+    variables: { slug: id },
+    skip: !id,
+  });
+  const event = data?.event;
+  const isError = !!error;
+
+  const [updateEvent, { loading: isUpdating }] =
+    useMutation(UpdateEventDocument);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -83,8 +93,8 @@ export default function EditEventPage() {
       form.setValues({
         title: event.title || "",
         description: event.description || "",
-        startDate: new Date(event.startDate),
-        endDate: new Date(event.endDate),
+        startDate: new Date(event.startDate ?? ""),
+        endDate: new Date(event.endDate ?? ""),
         availableSeats: event.availableSeats || 5,
         price: event.price || 0,
         tags: event.tags ? event.tags.join(", ") : "",
@@ -115,7 +125,7 @@ export default function EditEventPage() {
     );
   }
 
-  const isOngoingOrPast = new Date(event.startDate) <= new Date();
+  const isOngoingOrPast = new Date(event.startDate ?? "") <= new Date();
 
   if (isOngoingOrPast) {
     return (
@@ -184,40 +194,36 @@ export default function EditEventPage() {
           .filter(Boolean)
       : [];
 
-    const payload: UpdateEventPayload = {
-      title: values.title.trim(),
-      description: values.description.trim(),
-      startDate: new Date(values.startDate).toISOString(),
-      endDate: new Date(values.endDate).toISOString(),
-      availableSeats: Number(values.availableSeats),
-      tags: tagsArray,
-    };
-
-    if (imageFile) {
-      payload.image = imageFile;
-    }
-
-    updateEventMutation.mutate(
-      { id: event?.id || event._id || "", data: payload },
-      {
-        onSuccess: () => {
-          notifications.show({
-            title: "Event Updated Successfully!",
-            message: `Your event "${payload.title}" has been updated.`,
-            color: "green",
-          });
-          const redirectSlug = event.slug || event.id || event._id;
-          router.push(`/event/${redirectSlug}`);
-        },
-        onError: (err) => {
-          notifications.show({
-            title: "Update Failed",
-            message: err.message || "Failed to update event.",
-            color: "red",
-          });
+    updateEvent({
+      variables: {
+        id: event?.id || "",
+        data: {
+          title: values.title.trim(),
+          description: values.description.trim(),
+          startDate: new Date(values.startDate).toISOString(),
+          endDate: new Date(values.endDate).toISOString(),
+          availableSeats: Number(values.availableSeats),
+          tags: tagsArray,
+          image: imageFile,
         },
       },
-    );
+      onCompleted: () => {
+        notifications.show({
+          title: "Event Updated Successfully!",
+          message: `Your event "${values.title}" has been updated.`,
+          color: "green",
+        });
+        const redirectSlug = event.slug || event.id;
+        router.push(`/event/${redirectSlug}`);
+      },
+      onError: (err) => {
+        notifications.show({
+          title: "Update Failed",
+          message: err.message || "Failed to update event.",
+          color: "red",
+        });
+      },
+    });
   };
 
   return (
@@ -320,7 +326,7 @@ export default function EditEventPage() {
                 type="submit"
                 size="lg"
                 mt="xl"
-                loading={updateEventMutation.isPending}
+                loading={isUpdating}
                 leftSection={<FiCheckCircle size={20} />}
               >
                 Update Event

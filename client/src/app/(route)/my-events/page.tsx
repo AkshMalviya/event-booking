@@ -11,27 +11,52 @@ import {
 } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { FiPlus } from "react-icons/fi";
-import { useInfiniteMyEventsQuery } from "@/hooks/events/query/useInfiniteMyEventsQuery";
-import { EventItem } from "@/hooks/events/types";
+import { useQuery } from "@apollo/client/react";
+import { MyEventsDocument, EventEntity } from "@/generated/graphql";
 import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
 import MyEventCard from "@/components/ui/my-event-card/MyEventCard";
 
 export default function MyEventsPage() {
   const router = useRouter();
+  const [page, setPage] = React.useState(1);
 
   const {
     data,
-    isLoading,
-    isError,
+    loading: isLoading,
+    error,
     refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteMyEventsQuery({ limit: 10 });
+    fetchMore,
+    networkStatus,
+  } = useQuery(MyEventsDocument, {
+    variables: {
+      query: { limit: 10, page: 1 },
+    },
+    notifyOnNetworkStatusChange: true,
+  });
 
-  const events = useMemo(() => {
-    return data?.pages.flatMap((page) => page.data) || [];
-  }, [data]);
+  const isError = !!error;
+  const isFetchingNextPage = networkStatus === 3;
+  const events = data?.myEvents || [];
+
+  const hasNextPage = events.length > 0 && events.length % 10 === 0;
+
+  const fetchNextPage = async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    await fetchMore({
+      variables: {
+        query: { limit: 10, page: page + 1 },
+      },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult || fetchMoreResult.myEvents.length === 0)
+          return prev;
+        return Object.assign({}, prev, {
+          myEvents: [...prev.myEvents, ...fetchMoreResult.myEvents],
+        });
+      },
+    });
+    setPage((p) => p + 1);
+  };
 
   if (isError) {
     return (
@@ -68,15 +93,15 @@ export default function MyEventsPage() {
           </Button>
         </Group>
 
-        <InfiniteScrollList<EventItem>
-          items={events}
+        <InfiniteScrollList<EventEntity>
+          items={events as EventEntity[]}
           isLoading={isLoading}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
           fetchNextPage={fetchNextPage}
           emptyMessage="You haven't created any events yet."
           renderItem={(event) => {
-            const eventId = event.id || event._id || "";
+            const eventId = event.id || "";
             return <MyEventCard event={event} key={eventId} />;
           }}
         />

@@ -1,0 +1,18 @@
+query EventBySlug($slug: String!) {
+  event(slug: $slug) {
+    id
+    userId
+    title
+    slug
+    image
+    description
+    startDate
+    endDate
+    availableSeats
+    price
+    tags
+    registeredCount
+    createdAt
+    updatedAt
+  }
+}

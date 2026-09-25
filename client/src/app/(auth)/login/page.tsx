@@ -12,15 +12,16 @@ import {
 } from "@mantine/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useLoginMutation } from "@/hooks/auth/mutation/useLoginMutation";
 import { notifications } from "@mantine/notifications";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { loginSchema } from "@/validation/auth.schema";
 import { FiMail, FiLock, FiLogIn } from "react-icons/fi";
+import { useMutation } from "@apollo/client/react";
+import { LoginUserDocument } from "@/generated/graphql";
 
 const Login = () => {
   const router = useRouter();
-  const loginMutation = useLoginMutation();
+  const [loginMutation, { loading }] = useMutation(LoginUserDocument);
 
   const form = useForm({
     initialValues: {
@@ -30,9 +31,10 @@ const Login = () => {
     validate: yupResolver(loginSchema),
   });
 
-  const handleSubmit = async (values: typeof form.values) => {
-    loginMutation.mutate(values, {
-      onSuccess: () => {
+  const handleSubmit = (values: typeof form.values) => {
+    loginMutation({
+      variables: { input: values },
+      onCompleted() {
         router.push("/dashboard");
         notifications.show({
           message: "Successfully Logged In",
@@ -93,7 +95,7 @@ const Login = () => {
             radius="md"
             size="md"
             leftSection={<FiLogIn size={16} />}
-            loading={loginMutation.isPending}
+            loading={loading}
           >
             Login
           </Button>

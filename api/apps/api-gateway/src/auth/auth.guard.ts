@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ClientKafka } from '@nestjs/microservices';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
 import { UserEntity } from '@app/contracts/auth/user.entity';
 import { KafkaCircuitBreaker } from '@app/common';
@@ -43,7 +44,7 @@ export class AuthGuard implements CanActivate, OnModuleInit {
     try {
       await this.authClient.connect();
     } catch (err) {
-      console.warn('Kafka connection delayed:', err.message);
+      console.warn('Kafka connection delayed:', (err as Error).message);
     }
   }
 
@@ -57,7 +58,21 @@ export class AuthGuard implements CanActivate, OnModuleInit {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    let request: AuthenticatedRequest;
+
+    if (context.getType() === 'http') {
+      request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    } else if ((context.getType() as string) === 'graphql') {
+      const ctx = GqlExecutionContext.create(context);
+      request = ctx.getContext().req;
+    } else {
+      throw new UnauthorizedException('Unsupported context type');
+    }
+
+    if (!request) {
+      throw new UnauthorizedException('Could not extract request');
+    }
+
     const token = request.cookies?.access_token;
 
     if (!token) {

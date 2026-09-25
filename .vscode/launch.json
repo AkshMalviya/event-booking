@@ -1,0 +1,82 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Gateway (API)",
+      "command": "npm run start:dev",
+      "cwd": "${workspaceFolder}/api",
+      "presentation": {
+        "group": "API"
+      }
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Auth Service",
+      "command": "npm run dev:auth",
+      "cwd": "${workspaceFolder}/api",
+      "presentation": {
+        "group": "API"
+      }
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Event Service",
+      "command": "npm run dev:event",
+      "cwd": "${workspaceFolder}/api",
+      "presentation": {
+        "group": "API"
+      }
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Booking Service",
+      "command": "npm run dev:booking",
+      "cwd": "${workspaceFolder}/api",
+      "presentation": {
+        "group": "API"
+      }
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Next.js Client",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/client",
+      "presentation": {
+        "group": "Client"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Start Full Stack",
+      "configurations": [
+        "Gateway (API)",
+        "Auth Service",
+        "Event Service",
+        "Booking Service",
+        "Next.js Client"
+      ],
+      "presentation": {
+        "group": "Commands"
+      }
+    },
+    {
+      "name": "Start Backend Only",
+      "configurations": [
+        "Gateway (API)",
+        "Auth Service",
+        "Event Service",
+        "Booking Service"
+      ],
+      "presentation": {
+        "group": "Commands"
+      }
+    }
+  ]
+}

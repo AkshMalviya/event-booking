@@ -14,11 +14,11 @@ import React, { memo } from "react";
 import { useRouter } from "next/navigation";
 import { FiCalendar, FiClock, FiDollarSign, FiXCircle } from "react-icons/fi";
 import { HiOutlineTicket } from "react-icons/hi2";
-import { BookingItem } from "@/hooks/bookings/types";
+import { BookingEntity } from "@/generated/graphql";
 import { getImageUrl } from "@/utils/getImagePath";
 
 interface IProps {
-  booking: BookingItem;
+  booking: BookingEntity;
   onCancel: () => void;
   cancelLoading: boolean;
 }
@@ -38,12 +38,12 @@ const getStatusColor = (status: string) => {
 
 const BookingCard = ({ booking, onCancel, cancelLoading }: IProps) => {
   const router = useRouter();
-  const bookingId = booking.id || booking._id || "";
+  const bookingId = booking.id || "";
   const isCancelled = booking.status === "CANCELLED";
   const event = booking.event;
   const eventSlug = event?.slug || booking.eventId;
   const eventTitle = event?.title || "Event Details";
-  const imageUrl = getImageUrl(event?.image);
+  const imageUrl = getImageUrl(event?.image ?? "");
 
   const handleNavigateToEvent = () => {
     if (eventSlug) {

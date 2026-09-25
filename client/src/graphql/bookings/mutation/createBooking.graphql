@@ -1,0 +1,20 @@
+mutation CreateBooking($data: CreateBookingDto!) {
+  createBooking(data: $data) {
+    id
+    userId
+    eventId
+    event {
+      id
+      title
+      slug
+      image
+      startDate
+      endDate
+    }
+    ticketsCount
+    totalPrice
+    status
+    createdAt
+    updatedAt
+  }
+}

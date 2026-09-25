@@ -81,7 +81,7 @@ export function InfiniteScrollList<T>({
       {!hasNextPage && items.length > 0 && (
         <Center py="md">
           <Text size="sm" c="dimmed">
-            You have reached the end of the list.
+            You have reached the end.
           </Text>
         </Center>
       )}

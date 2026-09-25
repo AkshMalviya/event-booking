@@ -50,48 +50,47 @@ services:
     networks:
       - app_network
 
-  mongo:
-    image: mongo:7.0
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - app_network
+  # mongo:
+  #   image: mongo:7.0
+  #   container_name: mongo
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   networks:
+  #     - app_network
 
+  # # --- BACKEND API (NestJS Monolith) ---
+  # api:
+  #   image: ${DOCKERHUB_USERNAME:-amalviya0907}/event-booking-api:latest
+  #   container_name: event-booking-api
+  #   ports:
+  #     - "4000:4000" # API Gateway Port
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #     mongo:
+  #       condition: service_started
+  #   environment:
+  #     - PORT=4000
+  #     - KAFKA_BROKERS=kafka:29092
+  #     - AUTH_DB_URI=mongodb://mongo:27017/auth_db
+  #     - BOOKING_DB_URI=mongodb://mongo:27017/booking_db
+  #     - EVENT_DB_URI=mongodb://mongo:27017/event_db
+  #   networks:
+  #     - app_network
 
-  # --- BACKEND API (NestJS Monolith) ---
-  api:
-    image: ${DOCKERHUB_USERNAME:-amalviya0907}/event-booking-api:latest
-    container_name: event-booking-api
-    ports:
-      - "4000:4000" # API Gateway Port
-    depends_on:
-      kafka:
-        condition: service_healthy
-      mongo:
-        condition: service_started
-    environment:
-      - PORT=4000
-      - KAFKA_BROKERS=kafka:29092
-      - AUTH_DB_URI=mongodb://mongo:27017/auth_db
-      - BOOKING_DB_URI=mongodb://mongo:27017/booking_db
-      - EVENT_DB_URI=mongodb://mongo:27017/event_db
-    networks:
-      - app_network
-
-  # --- FRONTEND (Next.js) ---
-  web:
-    image: ${DOCKERHUB_USERNAME:-amalviya0907}/event-booking-web:latest
-    container_name: event-booking-web
-    ports:
-      - "3000:3000" # Client Port
-    environment:
-      - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://localhost:4000 # Configured for host to access the gateway
-    networks:
-      - app_network
+  # # --- FRONTEND (Next.js) ---
+  # web:
+  #   image: ${DOCKERHUB_USERNAME:-amalviya0907}/event-booking-web:latest
+  #   container_name: event-booking-web
+  #   ports:
+  #     - "3000:3000" # Client Port
+  #   environment:
+  #     - PORT=3000
+  #     - NEXT_PUBLIC_API_URL=http://localhost:4000 # Configured for host to access the gateway
+  #   networks:
+  #     - app_network
 
 networks:
   app_network:

@@ -1,0 +1,18 @@
+mutation UpdateEvent($id: String!, $data: UpdateEventDto!) {
+  updateEvent(id: $id, data: $data) {
+    id
+    userId
+    title
+    slug
+    image
+    description
+    startDate
+    endDate
+    availableSeats
+    price
+    tags
+    registeredCount
+    createdAt
+    updatedAt
+  }
+}

@@ -1,0 +1,18 @@
+query MyEvents($query: EventQueryDto) {
+  myEvents(query: $query) {
+    id
+    userId
+    title
+    slug
+    image
+    description
+    startDate
+    endDate
+    availableSeats
+    price
+    tags
+    registeredCount
+    createdAt
+    updatedAt
+  }
+}

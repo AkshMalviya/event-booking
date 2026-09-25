@@ -1,7 +1,10 @@
 "use client";
-import { API_BASE_URL } from "@/hooks/api-urls";
-import { useCreateBookingMutation } from "@/hooks/bookings/mutation/useCreateBookingMutation";
-import { useEventBySlugQuery } from "@/hooks/events/query/useEventBySlugQuery";
+import { useQuery, useMutation } from "@apollo/client/react";
+import {
+  EventBySlugDocument,
+  CreateBookingDocument,
+  MyBookingsDocument,
+} from "@/generated/graphql";
 import { useAppSelector } from "@/store/hooks";
 import {
   Badge,
@@ -33,6 +36,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { HiOutlineTicket } from "react-icons/hi2";
+import { getImageUrl } from "@/utils/getImagePath";
 
 export default function EventDetailsPage() {
   const params = useParams<{ slug: string }>();
@@ -41,20 +45,22 @@ export default function EventDetailsPage() {
   const user = useAppSelector((state) => state.user);
 
   const {
-    data: event,
-    isLoading,
-    isError,
+    data,
+    loading: isLoading,
+    error,
     refetch,
-  } = useEventBySlugQuery(slug);
-  const createBookingMutation = useCreateBookingMutation();
+  } = useQuery(EventBySlugDocument, {
+    variables: { slug },
+    skip: !slug,
+  });
+  const event = data?.event;
+  const isError = !!error;
+
+  const [createBooking, { loading: isBookingLoading }] = useMutation(
+    CreateBookingDocument,
+  );
 
   const [ticketCount, setTicketCount] = useState<number | string>(1);
-
-  const getImageUrl = (imagePath?: string) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith("http")) return imagePath;
-    return `${API_BASE_URL}${imagePath}`;
-  };
 
   if (isLoading) {
     return (
@@ -93,13 +99,13 @@ export default function EventDetailsPage() {
   const isOrganizer = !!user.id && user.id === event.userId;
 
   const now = new Date();
-  const startDate = new Date(event.startDate);
-  const endDate = new Date(event.endDate);
+  const startDate = new Date(event?.startDate ?? "");
+  const endDate = new Date(event?.endDate ?? "");
   const isUpcoming = startDate > now;
   const isStarted = startDate <= now && endDate > now;
   const isEnded = endDate <= now;
 
-  const imageUrl = getImageUrl(event.image);
+  const imageUrl = getImageUrl(event.image ?? "");
   const count = Number(ticketCount) || 1;
   const totalPrice = count * event.price;
 
@@ -145,30 +151,31 @@ export default function EventDetailsPage() {
       labels: { confirm: "Confirm Booking", cancel: "Cancel" },
       confirmProps: { color: "blue" },
       onConfirm: () => {
-        createBookingMutation.mutate(
-          {
-            eventId: event.id || event._id || "",
-            ticketsCount: count,
-          },
-          {
-            onSuccess: () => {
-              notifications.show({
-                title: "Booking Confirmed!",
-                message: `You have successfully booked ${count} ticket(s) for "${event.title}".`,
-                color: "green",
-              });
-              router.push("/bookings");
-            },
-            onError: (err) => {
-              notifications.show({
-                title: "Booking Failed",
-                message:
-                  err.message || "Failed to book tickets. Please try again.",
-                color: "red",
-              });
+        createBooking({
+          variables: {
+            data: {
+              eventId: event.id || "",
+              ticketsCount: count,
             },
           },
-        );
+          refetchQueries: [MyBookingsDocument],
+          onCompleted: () => {
+            notifications.show({
+              title: "Booking Confirmed!",
+              message: `You have successfully booked ${count} ticket(s) for "${event.title}".`,
+              color: "green",
+            });
+            router.push("/bookings");
+          },
+          onError: (err) => {
+            notifications.show({
+              title: "Booking Failed",
+              message:
+                err.message || "Failed to book tickets. Please try again.",
+              color: "red",
+            });
+          },
+        });
       },
     });
   };
@@ -263,7 +270,7 @@ export default function EventDetailsPage() {
                     </Text>
                   </Group>
                   <Text fw={600} size="sm">
-                    {new Date(event.startDate).toLocaleString()}
+                    {new Date(event?.startDate ?? "").toLocaleString()}
                   </Text>
                 </div>
                 <div>
@@ -274,7 +281,7 @@ export default function EventDetailsPage() {
                     </Text>
                   </Group>
                   <Text fw={600} size="sm">
-                    {new Date(event.endDate).toLocaleString()}
+                    {new Date(event?.endDate ?? "").toLocaleString()}
                   </Text>
                 </div>
                 <div>
@@ -393,7 +400,7 @@ export default function EventDetailsPage() {
                     ) : undefined
                   }
                   disabled={isSoldOut || isOrganizer || !isUpcoming}
-                  loading={createBookingMutation.isPending}
+                  loading={isBookingLoading}
                   onClick={handleBookTickets}
                 >
                   {isEnded

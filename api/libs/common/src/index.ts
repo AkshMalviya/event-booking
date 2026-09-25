@@ -6,3 +6,4 @@ export * from './interceptors/mongoose-serializer.interceptor';
 export * from './config/kafka-retry.config';
 export * from './circuit-breaker/kafka-circuit-breaker';
 export * from './filters/kafka-dlq.filter';
+export * from './scalars/date.scalar';

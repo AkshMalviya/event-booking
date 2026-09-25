@@ -1,0 +1,35 @@
+query EventBookings($eventId: String!) {
+  eventBookings(eventId: $eventId) {
+    id
+    userId
+    eventId
+    event {
+      id
+      userId
+      title
+      slug
+      image
+      description
+      startDate
+      endDate
+      availableSeats
+      price
+      tags
+      registeredCount
+      createdAt
+      updatedAt
+    }
+    user {
+      id
+      name
+      email
+      createdAt
+      updatedAt
+    }
+    ticketsCount
+    totalPrice
+    status
+    createdAt
+    updatedAt
+  }
+}

@@ -20,8 +20,8 @@ import { useForm } from "@mantine/form";
 import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
-import { useCreateEventMutation } from "@/hooks/events/mutation/useCreateEventMutation";
-import { CreateEventPayload } from "@/hooks/events/types";
+import { useMutation } from "@apollo/client/react";
+import { CreateEventDocument } from "@/generated/graphql";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { createEventSchema } from "@/validation/event.schema";
 import {
@@ -35,7 +35,7 @@ import {
 
 export default function CreateEventPage() {
   const router = useRouter();
-  const createEventMutation = useCreateEventMutation();
+  const [createEvent, { loading: isPending }] = useMutation(CreateEventDocument);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -96,26 +96,28 @@ export default function CreateEventPage() {
           .filter(Boolean)
       : [];
 
-    const payload: CreateEventPayload = {
-      title: values.title.trim(),
-      description: values.description.trim(),
-      startDate: new Date(values.startDate).toISOString(),
-      endDate: new Date(values.endDate).toISOString(),
-      availableSeats: Number(values.availableSeats),
-      price: Number(values.price),
-      tags: tagsArray,
-      image: imageFile,
-      idempotencyKey: values.idempotencyKey,
-    };
-
-    createEventMutation.mutate(payload, {
-      onSuccess: (newEvent) => {
+    createEvent({
+      variables: {
+        data: {
+          title: values.title.trim(),
+          description: values.description.trim(),
+          startDate: new Date(values.startDate).toISOString(),
+          endDate: new Date(values.endDate).toISOString(),
+          availableSeats: Number(values.availableSeats),
+          price: Number(values.price),
+          tags: tagsArray,
+          image: imageFile,
+        },
+        idempotencyKey: values.idempotencyKey,
+      },
+      onCompleted: (result) => {
+        const newEvent = result.createEvent;
         notifications.show({
           title: "Event Created Successfully!",
           message: `Your event "${newEvent.title}" has been published.`,
           color: "green",
         });
-        const redirectSlug = newEvent.slug || newEvent.id || newEvent._id;
+        const redirectSlug = newEvent.slug || newEvent.id;
         if (redirectSlug) {
           router.push(`/event/${redirectSlug}`);
         } else {
@@ -125,8 +127,7 @@ export default function CreateEventPage() {
       onError: (err) => {
         notifications.show({
           title: "Event Creation Failed",
-          message:
-            err.message || "Failed to create event. Please check your input.",
+          message: err.message || "Failed to create event. Please check your input.",
           color: "red",
         });
       },
@@ -243,14 +244,14 @@ export default function CreateEventPage() {
                 <Button
                   variant="default"
                   onClick={() => router.push("/dashboard")}
-                  disabled={createEventMutation.isPending}
+                  disabled={isPending}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   leftSection={<FiCheckCircle size={16} />}
-                  loading={createEventMutation.isPending}
+                  loading={isPending}
                 >
                   Create Event
                 </Button>

@@ -1,4 +1,5 @@
-import { useLogoutMutation } from "@/hooks/auth/mutation/useLogoutMutation";
+import { useMutation } from "@apollo/client/react";
+import { LogoutDocument } from "@/generated/graphql";
 import { useAppSelector } from "@/store/hooks";
 import {
   Avatar,
@@ -22,16 +23,18 @@ interface IProps {
 
 const Header = ({ opened, toggle }: IProps) => {
   const router = useRouter();
-  const logoutMutation = useLogoutMutation();
+  const [logout, { loading: isPending }] = useMutation(LogoutDocument);
   const user = useAppSelector((state) => state.user);
 
-  const handleLogout = async () => {
-    try {
-      await logoutMutation.mutateAsync();
-      router.push("/login");
-    } catch {
-      router.push("/login");
-    }
+  const handleLogout = () => {
+    logout({
+      onCompleted: () => {
+        router.push("/login");
+      },
+      onError: () => {
+        router.push("/login");
+      },
+    });
   };
 
   return (
@@ -95,7 +98,7 @@ const Header = ({ opened, toggle }: IProps) => {
               color="red"
               leftSection={<FiLogOut size={16} />}
               onClick={handleLogout}
-              disabled={logoutMutation.isPending}
+              disabled={isPending}
             >
               Logout
             </Menu.Item>

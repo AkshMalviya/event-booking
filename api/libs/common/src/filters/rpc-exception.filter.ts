@@ -10,9 +10,6 @@ import type { Response } from 'express';
 @Catch()
 export class RpcToHttpExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: any = 'Internal server error';
 
@@ -40,6 +37,13 @@ export class RpcToHttpExceptionFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       message = exception;
     }
+
+    if ((host.getType() as string) === 'graphql') {
+      throw new HttpException(message, status);
+    }
+
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
 
     if (typeof message === 'object' && message !== null) {
       response.status(status).json(message);

@@ -23,19 +23,25 @@ import {
   FiEdit,
 } from "react-icons/fi";
 import Link from "next/link";
-import { EventItem } from "@/hooks/events/types";
-import { useEventBookingsQuery } from "@/hooks/events/query/useEventBookingsQuery";
+import { useQuery } from "@apollo/client/react";
+import { EventBookingsDocument, EventEntity } from "@/generated/graphql";
 import { getImageUrl } from "@/utils/getImagePath";
 
-const MyEventCard = ({ event }: { event: EventItem }) => {
+const MyEventCard = ({ event }: { event: EventEntity }) => {
   const [opened, setOpened] = useState(false);
-  const eventId = event.id || event._id || "";
+  const eventId = event.id || "";
 
   const {
-    data: bookings,
-    isLoading,
-    isError,
-  } = useEventBookingsQuery(opened ? eventId : "");
+    data,
+    loading: isLoading,
+    error,
+  } = useQuery(EventBookingsDocument, {
+    variables: { eventId },
+    skip: !opened || !eventId,
+  });
+
+  const bookings = data?.eventBookings;
+  const isError = !!error;
 
   const getEventStatus = (start: string, end: string) => {
     const now = new Date();
@@ -47,7 +53,7 @@ const MyEventCard = ({ event }: { event: EventItem }) => {
     return { label: "Past", color: "gray" };
   };
 
-  const status = getEventStatus(event.startDate, event.endDate);
+  const status = getEventStatus(event.startDate ?? "", event.endDate ?? "");
 
   return (
     <Card
@@ -111,22 +117,20 @@ const MyEventCard = ({ event }: { event: EventItem }) => {
                   <FiCalendar size={12} />
                 </ThemeIcon>
                 <Text size="sm" c="dimmed" fw={500}>
-                  {new Date(event.startDate).toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {new Date(event?.startDate ?? "").toLocaleDateString(
+                    undefined,
+                    {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    },
+                  )}
                 </Text>
               </Group>
 
               <Group gap={6}>
-                <ThemeIcon
-                  variant="light"
-                  color="grape"
-                  size="sm"
-                  radius="xl"
-                >
+                <ThemeIcon variant="light" color="grape" size="sm" radius="xl">
                   <FiUsers size={12} />
                 </ThemeIcon>
                 <Text size="sm" c="dimmed" fw={500}>
@@ -226,7 +230,7 @@ const MyEventCard = ({ event }: { event: EventItem }) => {
                 </Table.Thead>
                 <Table.Tbody bg="white">
                   {bookings.map((booking) => {
-                    const bookingId = booking.id || booking._id || "";
+                    const bookingId = booking.id || "";
                     return (
                       <Table.Tr key={bookingId}>
                         <Table.Td>
