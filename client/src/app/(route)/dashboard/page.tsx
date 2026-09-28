@@ -75,8 +75,6 @@ export default function DashboardPage() {
   const isFetchingNextPage = networkStatus === 3;
   const events = data?.events || [];
 
-  // Since limit is 9, if the last page returned 9 items, there might be more
-  // (In real pagination, the backend should return a total count or hasNextPage)
   const hasNextPage = events.length > 0 && events.length % 9 === 0;
 
   const fetchNextPage = async () => {
@@ -106,8 +104,6 @@ export default function DashboardPage() {
     });
     setPage((p) => p + 1);
   };
-
-  // Removing useEffect for page reset as requested
 
   if (isError) {
     return (

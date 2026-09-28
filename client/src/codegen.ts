@@ -6,21 +6,29 @@ const config: CodegenConfig = {
   schema: `${API_URL}/graphql`,
   overwrite: true,
   documents: "src/graphql/**/*.graphql",
+
   generates: {
-    "src/generated/": {
-      preset: "client",
+    "src/generated/graphql.tsx": {
+      plugins: [
+        {
+          add: {
+            content: "/* eslint-disable */\n// @ts-nocheck",
+          },
+        },
+        "typescript",
+        "typescript-operations",
+        "typed-document-node",
+      ],
+      overwrite: true,
       config: {
         avoidOptionals: {
           field: true,
           inputValue: false,
         },
-        defaultScalarType: "unknown",
-        nonOptionalTypename: true,
-        skipTypeNameForRoot: true,
-        scalars: {
-          DateTime: "string",
-          Date: "string",
-        },
+
+        defaultScalarType: "any",
+        // nonOptionalTypename: true,
+        // skipTypeNameForRoot: true,
       },
     },
   },

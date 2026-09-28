@@ -30,7 +30,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "src/generated/graphql.ts"],
+  "exclude": ["node_modules", "src/generated/**/*"],
   "watchOptions": {
     "excludeDirectories": ["**/node_modules"]
   }

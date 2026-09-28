@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 /** Internal type. DO NOT USE DIRECTLY. */
 type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** Internal type. DO NOT USE DIRECTLY. */
@@ -12,12 +14,12 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  DateTime: { input: string; output: string; }
-  Upload: { input: unknown; output: unknown; }
+  DateTime: { input: any; output: any; }
+  Upload: { input: any; output: any; }
 };
 
 export type BookingEntity = {
-  __typename: 'BookingEntity';
+  __typename?: 'BookingEntity';
   createdAt: Maybe<Scalars['String']['output']>;
   event: Maybe<EventEntity>;
   eventId: Scalars['String']['output'];
@@ -66,7 +68,7 @@ export type CreateEventDto = {
 };
 
 export type EventEntity = {
-  __typename: 'EventEntity';
+  __typename?: 'EventEntity';
   availableSeats: Scalars['Int']['output'];
   createdAt: Maybe<Scalars['DateTime']['output']>;
   description: Scalars['String']['output'];
@@ -105,7 +107,7 @@ export type LoginDto = {
 };
 
 export type Mutation = {
-  __typename: 'Mutation';
+  __typename?: 'Mutation';
   cancelBooking: BookingEntity;
   createBooking: BookingEntity;
   createEvent: EventEntity;
@@ -148,7 +150,7 @@ export type MutationUpdateEventArgs = {
 };
 
 export type Query = {
-  __typename: 'Query';
+  __typename?: 'Query';
   booking: BookingEntity;
   event: EventEntity;
   eventBookings: Array<BookingEntity>;
@@ -210,7 +212,7 @@ export type UpdateEventDto = {
 };
 
 export type UserEntity = {
-  __typename: 'UserEntity';
+  __typename?: 'UserEntity';
   createdAt: Maybe<Scalars['String']['output']>;
   email: Scalars['String']['output'];
   id: Scalars['String']['output'];
@@ -244,7 +246,7 @@ export type CreateEventDto = {
   availableSeats: number;
   description: string;
   endDate: string;
-  image?: unknown;
+  image?: any;
   price: number;
   startDate: string;
   tags?: Array<string> | null | undefined;
@@ -284,9 +286,9 @@ export type SortOrder =
 export type UpdateEventDto = {
   availableSeats?: number | null | undefined;
   description?: string | null | undefined;
-  endDate?: string | null | undefined;
-  image?: unknown;
-  startDate?: string | null | undefined;
+  endDate?: any;
+  image?: any;
+  startDate?: any;
   tags?: Array<string> | null | undefined;
   title?: string | null | undefined;
 };
@@ -296,7 +298,7 @@ export type LoginUserMutationVariables = Exact<{
 }>;
 
 
-export type LoginUserMutation = { login: { __typename: 'UserEntity', id: string, name: string, email: string, createdAt: string | null, updatedAt: string | null } };
+export type LoginUserMutation = { login: { id: string, name: string, email: string, createdAt: string | null, updatedAt: string | null } };
 
 export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -313,35 +315,35 @@ export type SignupMutation = { register: string };
 export type UserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type UserQuery = { me: { __typename: 'UserEntity', id: string, name: string, email: string, createdAt: string | null, updatedAt: string | null } };
+export type UserQuery = { me: { id: string, name: string, email: string, createdAt: string | null, updatedAt: string | null } };
 
 export type CancelBookingMutationVariables = Exact<{
   id: string;
 }>;
 
 
-export type CancelBookingMutation = { cancelBooking: { __typename: 'BookingEntity', id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null } };
+export type CancelBookingMutation = { cancelBooking: { id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null } };
 
 export type CreateBookingMutationVariables = Exact<{
   data: CreateBookingDto;
 }>;
 
 
-export type CreateBookingMutation = { createBooking: { __typename: 'BookingEntity', id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null, event: { __typename: 'EventEntity', id: string, title: string, slug: string, image: string | null, startDate: string | null, endDate: string | null } | null } };
+export type CreateBookingMutation = { createBooking: { id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null, event: { id: string, title: string, slug: string, image: string | null, startDate: any, endDate: any } | null } };
 
 export type EventBookingsQueryVariables = Exact<{
   eventId: string;
 }>;
 
 
-export type EventBookingsQuery = { eventBookings: Array<{ __typename: 'BookingEntity', id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null, event: { __typename: 'EventEntity', id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: string | null, endDate: string | null, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: string | null, updatedAt: string | null } | null, user: { __typename: 'UserEntity', id: string, name: string, email: string, createdAt: string | null, updatedAt: string | null } | null }> };
+export type EventBookingsQuery = { eventBookings: Array<{ id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null, event: { id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any } | null, user: { id: string, name: string, email: string, createdAt: string | null, updatedAt: string | null } | null }> };
 
 export type MyBookingsQueryVariables = Exact<{
   query?: BookingQueryDto | null | undefined;
 }>;
 
 
-export type MyBookingsQuery = { myBookings: Array<{ __typename: 'BookingEntity', id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null, event: { __typename: 'EventEntity', id: string, title: string, slug: string, image: string | null, startDate: string | null, endDate: string | null } | null }> };
+export type MyBookingsQuery = { myBookings: Array<{ id: string, userId: string, eventId: string, ticketsCount: number, totalPrice: number, status: BookingStatus, createdAt: string | null, updatedAt: string | null, event: { id: string, title: string, slug: string, image: string | null, startDate: any, endDate: any } | null }> };
 
 export type CreateEventMutationVariables = Exact<{
   data: CreateEventDto;
@@ -349,7 +351,7 @@ export type CreateEventMutationVariables = Exact<{
 }>;
 
 
-export type CreateEventMutation = { createEvent: { __typename: 'EventEntity', id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: string | null, endDate: string | null, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: string | null, updatedAt: string | null } };
+export type CreateEventMutation = { createEvent: { id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any } };
 
 export type UpdateEventMutationVariables = Exact<{
   id: string;
@@ -357,28 +359,28 @@ export type UpdateEventMutationVariables = Exact<{
 }>;
 
 
-export type UpdateEventMutation = { updateEvent: { __typename: 'EventEntity', id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: string | null, endDate: string | null, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: string | null, updatedAt: string | null } };
+export type UpdateEventMutation = { updateEvent: { id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any } };
 
 export type EventBySlugQueryVariables = Exact<{
   slug: string;
 }>;
 
 
-export type EventBySlugQuery = { event: { __typename: 'EventEntity', id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: string | null, endDate: string | null, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: string | null, updatedAt: string | null } };
+export type EventBySlugQuery = { event: { id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any } };
 
 export type EventsQueryVariables = Exact<{
   query?: EventQueryDto | null | undefined;
 }>;
 
 
-export type EventsQuery = { events: Array<{ __typename: 'EventEntity', id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: string | null, endDate: string | null, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: string | null, updatedAt: string | null }> };
+export type EventsQuery = { events: Array<{ id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any }> };
 
 export type MyEventsQueryVariables = Exact<{
   query?: EventQueryDto | null | undefined;
 }>;
 
 
-export type MyEventsQuery = { myEvents: Array<{ __typename: 'EventEntity', id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: string | null, endDate: string | null, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: string | null, updatedAt: string | null }> };
+export type MyEventsQuery = { myEvents: Array<{ id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any }> };
 
 
 export const LoginUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LoginUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<LoginUserMutation, LoginUserMutationVariables>;
