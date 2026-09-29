@@ -1,42 +1,44 @@
 "use client";
 
-import React from "react";
+import DashboardCard from "@/components/ui/dashboard-card/DashboardCard";
+import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
 import {
-  Container,
-  Title,
-  Text,
-  Stack,
-  SimpleGrid,
-  Button,
-  Group,
-  Paper,
-  TextInput,
-  Switch,
-  Menu,
-  Select,
-} from "@mantine/core";
-import { useRouter } from "next/navigation";
+  EventEntity,
+  EventsDocument,
+  EventTimeline,
+  SortOrder,
+} from "@/generated/graphql";
+import { useSearchParameterFilter } from "@/hooks/common/useSearchParameterFilter";
 import { useAppSelector } from "@/store/hooks";
 import { useQuery } from "@apollo/client/react";
 import {
-  EventsDocument,
-  EventEntity,
-  SortOrder,
-  EventTimeline,
-} from "@/generated/graphql";
-import { FiPlus, FiSearch, FiFilter, FiCheck } from "react-icons/fi";
-import DashboardCard from "@/components/ui/dashboard-card/DashboardCard";
-import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
-import { useSearchParameterFilter } from "@/hooks/common/useSearchParameterFilter";
+  Button,
+  Container,
+  Group,
+  Menu,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { FiCheck, FiFilter, FiPlus, FiSearch } from "react-icons/fi";
 
 type TTimeline = "upcoming" | "ongoing" | "past";
 type TSortOrder = "asc" | "desc";
 
+const PAGE_LIMIT = 6;
+
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAppSelector((state) => state.user);
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = useState(1);
 
   const { filters, updateFilter, resetFilters } = useSearchParameterFilter({
     search: "",
@@ -64,21 +66,19 @@ export default function DashboardPage() {
         sortOrder: filters.sortOrder === "asc" ? SortOrder.Asc : SortOrder.Desc,
         timeline:
           (filters.timeline?.toUpperCase() as EventTimeline) || undefined,
-        limit: 9,
+        limit: PAGE_LIMIT,
         page: 1,
       },
     },
     notifyOnNetworkStatusChange: true,
   });
 
-  const isError = !!error;
-  const isFetchingNextPage = networkStatus === 3;
-  const events = data?.events || [];
-
-  const hasNextPage = events.length > 0 && events.length % 9 === 0;
+  const events = useMemo(() => {
+    return data?.events.data || [];
+  }, [data]);
 
   const fetchNextPage = async () => {
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!data?.events.meta.hasNextPage) return;
 
     await fetchMore({
       variables: {
@@ -90,22 +90,25 @@ export default function DashboardPage() {
             filters.sortOrder === "asc" ? SortOrder.Asc : SortOrder.Desc,
           timeline:
             (filters.timeline?.toUpperCase() as EventTimeline) || undefined,
-          limit: 9,
+          limit: PAGE_LIMIT,
           page: page + 1,
         },
       },
       updateQuery: (prev, { fetchMoreResult }) => {
-        if (!fetchMoreResult || fetchMoreResult.events.length === 0)
+        if (!fetchMoreResult || fetchMoreResult.events.data.length === 0)
           return prev;
         return Object.assign({}, prev, {
-          events: [...prev.events, ...fetchMoreResult.events],
+          events: {
+            ...fetchMoreResult.events,
+            data: [...prev.events.data, ...fetchMoreResult.events.data],
+          },
         });
       },
     });
     setPage((p) => p + 1);
   };
 
-  if (isError) {
+  if (error) {
     return (
       <Paper p="xl" withBorder radius="md" ta="center">
         <Text c="red" fw={500} mb="sm">
@@ -264,8 +267,8 @@ export default function DashboardPage() {
         <InfiniteScrollList<EventEntity>
           items={events}
           isLoading={isLoading}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={data?.events.meta?.hasNextPage ?? false}
+          isFetchingNextPage={networkStatus === 3}
           fetchNextPage={fetchNextPage}
           emptyMessage="No events found matching your criteria."
           gridComponent={SimpleGrid}

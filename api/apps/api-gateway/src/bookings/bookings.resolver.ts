@@ -4,7 +4,10 @@ import type { Request } from 'express';
 import { CreateBookingDto } from '@app/contracts/bookings/create-booking.dto';
 import { BookingQueryDto } from '@app/contracts/bookings/booking-query.dto';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
-import { BookingEntity } from '@app/contracts/bookings/booking.entity';
+import {
+  BookingEntity,
+  PaginatedBooking,
+} from '@app/contracts/bookings/booking.entity';
 import { UserEntity } from '@app/contracts/auth/user.entity';
 import { KafkaCircuitBreaker } from '@app/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
@@ -35,17 +38,20 @@ export class BookingsResolver {
     });
   }
 
-  @Query(() => [BookingEntity])
+  @Query(() => PaginatedBooking)
   async myBookings(
     @Context('req') request: AuthenticatedRequest,
     @Args('query', { type: () => BookingQueryDto, nullable: true })
     query: BookingQueryDto,
   ) {
-    const res = await this.breaker.send<any>(BOOKING_PATTERNS.FIND_ALL_USER, {
-      userId: request.user.id,
-      query: query || {},
-    });
-    return res?.data || res;
+    const res = await this.breaker.send<PaginatedBooking>(
+      BOOKING_PATTERNS.FIND_ALL_USER,
+      {
+        userId: request.user.id,
+        query: query || {},
+      },
+    );
+    return res;
   }
 
   @Query(() => BookingEntity)

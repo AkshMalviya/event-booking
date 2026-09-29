@@ -44,3 +44,27 @@ export class EventEntity {
   @Field(() => Date, { nullable: true })
   updatedAt?: Date;
 }
+
+@ObjectType()
+export class PaginatedMeta {
+  @Field(() => Int)
+  total: number;
+
+  @Field(() => Int)
+  page: number;
+
+  @Field(() => Int)
+  limit: number;
+
+  @Field(() => Boolean)
+  hasNextPage: boolean;
+}
+
+@ObjectType()
+export class PaginatedEvents {
+  @Field(() => PaginatedMeta)
+  meta: PaginatedMeta;
+
+  @Field(() => [EventEntity])
+  data: EventEntity[];
+}

@@ -1,28 +1,28 @@
 "use client";
-import {
-  Container,
-  Title,
-  Text,
-  Stack,
-  Button,
-  Group,
-  SimpleGrid,
-  Paper,
-  SegmentedControl,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { modals } from "@mantine/modals";
-import React, { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import {
-  MyBookingsDocument,
-  CancelBookingDocument,
-  BookingEntity,
-  BookingTimelineFilter,
-} from "@/generated/graphql";
 import BookingCard from "@/components/ui/booking-card/BookingCard";
 import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
+import {
+  BookingEntity,
+  BookingTimelineFilter,
+  CancelBookingDocument,
+  MyBookingsDocument,
+} from "@/generated/graphql";
 import { useSearchParameterFilter } from "@/hooks/common/useSearchParameterFilter";
+import { useMutation, useQuery } from "@apollo/client/react";
+import {
+  Button,
+  Container,
+  Group,
+  Paper,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
+import { useMemo, useState } from "react";
 
 export default function BookingsPage() {
   const { filters, updateFilter } = useSearchParameterFilter({
@@ -54,14 +54,12 @@ export default function BookingsPage() {
     fetchPolicy: "cache-and-network",
   });
 
-  const isError = !!error;
-  const isFetchingNextPage = networkStatus === 3;
-  const bookings = data?.myBookings || [];
-
-  const hasNextPage = bookings.length > 0 && bookings.length % 9 === 0;
+  const bookings = useMemo(() => {
+    return data?.myBookings.data || [];
+  }, [data]);
 
   const fetchNextPage = async () => {
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!data?.myBookings.meta.hasNextPage) return;
 
     await fetchMore({
       variables: {
@@ -75,17 +73,18 @@ export default function BookingsPage() {
         },
       },
       updateQuery: (prev, { fetchMoreResult }) => {
-        if (!fetchMoreResult || fetchMoreResult.myBookings.length === 0)
+        if (!fetchMoreResult || fetchMoreResult.myBookings.data.length === 0)
           return prev;
         return Object.assign({}, prev, {
-          myBookings: [...prev.myBookings, ...fetchMoreResult.myBookings],
+          myBookings: {
+            ...fetchMoreResult.myBookings,
+            data: [...prev.myBookings.data, ...fetchMoreResult.myBookings.data],
+          },
         });
       },
     });
     setPage((p) => p + 1);
   };
-
-  // Removed useEffect for page reset
 
   const [cancelBooking] = useMutation(CancelBookingDocument);
 
@@ -130,7 +129,7 @@ export default function BookingsPage() {
     });
   };
 
-  if (isError) {
+  if (error) {
     return (
       <Paper p="xl" withBorder radius="md" ta="center">
         <Text c="red" fw={500} mb="sm">
@@ -176,8 +175,8 @@ export default function BookingsPage() {
         <InfiniteScrollList<BookingEntity>
           items={bookings as BookingEntity[]}
           isLoading={isLoading}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={data?.myBookings.meta?.hasNextPage ?? false}
+          isFetchingNextPage={networkStatus === 3}
           fetchNextPage={fetchNextPage}
           emptyMessage={`No ${filters.filter === "all" ? "" : filters.filter} bookings found.`}
           gridComponent={SimpleGrid}

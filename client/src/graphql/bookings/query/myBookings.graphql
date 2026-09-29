@@ -1,20 +1,43 @@
 query MyBookings($query: BookingQueryDto) {
   myBookings(query: $query) {
-    id
-    userId
-    eventId
-    event {
+    data {
       id
-      title
-      slug
-      image
-      startDate
-      endDate
+      userId
+      eventId
+      event {
+        id
+        userId
+        title
+        slug
+        image
+        description
+        startDate
+        endDate
+        availableSeats
+        price
+        tags
+        registeredCount
+        createdAt
+        updatedAt
+      }
+      user {
+        id
+        name
+        email
+        createdAt
+        updatedAt
+      }
+      ticketsCount
+      totalPrice
+      status
+      createdAt
+      updatedAt
     }
-    ticketsCount
-    totalPrice
-    status
-    createdAt
-    updatedAt
+    meta {
+      total
+      page
+      limit
+      hasNextPage
+    }
   }
 }

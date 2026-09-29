@@ -1,6 +1,6 @@
 import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { BookingStatus } from './booking-status.enum';
-import { EventEntity } from '../events/event.entity';
+import { EventEntity, PaginatedMeta } from '../events/event.entity';
 import { UserEntity } from '../auth/user.entity';
 
 registerEnumType(BookingStatus, {
@@ -38,4 +38,13 @@ export class BookingEntity {
 
   @Field(() => String, { nullable: true })
   updatedAt?: string;
+}
+
+@ObjectType()
+export class PaginatedBooking {
+  @Field(() => PaginatedMeta)
+  meta: PaginatedMeta;
+
+  @Field(() => [BookingEntity])
+  data: BookingEntity[];
 }

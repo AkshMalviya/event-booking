@@ -1,19 +1,22 @@
 import { Inject, NotFoundException } from '@nestjs/common';
-import { ClientKafka } from '@nestjs/microservices';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { ClientKafka } from '@nestjs/microservices';
 import type { Request } from 'express';
 import { createWriteStream } from 'fs';
 import { join } from 'path';
 
-import { CreateEventDto } from '@app/contracts/events/create-event.dto';
-import { UpdateEventDto } from '@app/contracts/events/update-event.dto';
-import { EventQueryDto } from '@app/contracts/events/event-query.dto';
-import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
-import { EventEntity } from '@app/contracts/events/event.entity';
+import { KafkaCircuitBreaker, PaginationResult } from '@app/common';
 import { UserEntity } from '@app/contracts/auth/user.entity';
+import { PaginatedBooking } from '@app/contracts/bookings/booking.entity';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
-import { KafkaCircuitBreaker } from '@app/common';
-import { BookingEntity } from '@app/contracts/bookings/booking.entity';
+import { CreateEventDto } from '@app/contracts/events/create-event.dto';
+import { EventQueryDto } from '@app/contracts/events/event-query.dto';
+import {
+  EventEntity,
+  PaginatedEvents,
+} from '@app/contracts/events/event.entity';
+import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
+import { UpdateEventDto } from '@app/contracts/events/update-event.dto';
 
 type AuthenticatedRequest = Request & {
   user: UserEntity;
@@ -34,32 +37,32 @@ export class EventsResolver {
     this.bookingBreaker = new KafkaCircuitBreaker(this.bookingClient);
   }
 
-  @Query(() => [EventEntity])
+  @Query(() => PaginatedEvents)
   async events(
     @Args('query', { type: () => EventQueryDto, nullable: true })
     query: EventQueryDto,
   ) {
-    const res = await this.eventBreaker.send<any>(
+    const res = await this.eventBreaker.send<PaginationResult<EventEntity>>(
       EVENT_PATTERNS.FIND_ALL,
       query || {},
     );
-    return res?.data || res;
+    return res;
   }
 
-  @Query(() => [EventEntity])
+  @Query(() => PaginatedEvents)
   async myEvents(
     @Context('req') request: AuthenticatedRequest,
     @Args('query', { type: () => EventQueryDto, nullable: true })
     query: EventQueryDto,
   ) {
-    const res = await this.eventBreaker.send<any>(
+    const res = await this.eventBreaker.send<PaginatedEvents>(
       EVENT_PATTERNS.FIND_ALL_ORGANIZER,
       {
         userId: request.user.id,
         query: query || {},
       },
     );
-    return res?.data || res;
+    return res;
   }
 
   @Query(() => EventEntity)
@@ -76,15 +79,18 @@ export class EventsResolver {
     return event;
   }
 
-  @Query(() => [BookingEntity])
+  @Query(() => PaginatedBooking)
   eventBookings(
     @Args('eventId') eventId: string,
     @Context('req') request: AuthenticatedRequest,
   ) {
-    return this.bookingBreaker.send<any>(BOOKING_PATTERNS.FIND_ALL_BY_EVENT, {
-      eventId,
-      userId: request.user.id,
-    });
+    return this.bookingBreaker.send<PaginatedBooking>(
+      BOOKING_PATTERNS.FIND_ALL_BY_EVENT,
+      {
+        eventId,
+        userId: request.user.id,
+      },
+    );
   }
 
   @Mutation(() => EventEntity)

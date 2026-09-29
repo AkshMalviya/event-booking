@@ -1,18 +1,26 @@
 query Events($query: EventQueryDto) {
   events(query: $query) {
-    id
-    userId
-    title
-    slug
-    image
-    description
-    startDate
-    endDate
-    availableSeats
-    price
-    tags
-    registeredCount
-    createdAt
-    updatedAt
+    meta {
+      total
+      page
+      limit
+      hasNextPage
+    }
+    data {
+      id
+      userId
+      title
+      slug
+      image
+      description
+      startDate
+      endDate
+      availableSeats
+      price
+      tags
+      registeredCount
+      createdAt
+      updatedAt
+    }
   }
 }

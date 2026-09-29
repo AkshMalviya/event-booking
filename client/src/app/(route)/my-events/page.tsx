@@ -1,24 +1,24 @@
 "use client";
-import React, { useMemo } from "react";
-import {
-  Container,
-  Title,
-  Text,
-  Stack,
-  Button,
-  Group,
-  Paper,
-} from "@mantine/core";
-import { useRouter } from "next/navigation";
-import { FiPlus } from "react-icons/fi";
-import { useQuery } from "@apollo/client/react";
-import { MyEventsDocument, EventEntity } from "@/generated/graphql";
 import { InfiniteScrollList } from "@/components/ui/infinite-list/InfiniteScrollList";
 import MyEventCard from "@/components/ui/my-event-card/MyEventCard";
+import { EventEntity, MyEventsDocument } from "@/generated/graphql";
+import { useQuery } from "@apollo/client/react";
+import {
+  Button,
+  Container,
+  Group,
+  Paper,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { FiPlus } from "react-icons/fi";
 
 export default function MyEventsPage() {
   const router = useRouter();
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = useState(1);
 
   const {
     data,
@@ -34,31 +34,32 @@ export default function MyEventsPage() {
     notifyOnNetworkStatusChange: true,
   });
 
-  const isError = !!error;
-  const isFetchingNextPage = networkStatus === 3;
-  const events = data?.myEvents || [];
-
-  const hasNextPage = events.length > 0 && events.length % 10 === 0;
+  const events = useMemo(() => {
+    return data?.myEvents.data || [];
+  }, [data]);
 
   const fetchNextPage = async () => {
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!data?.myEvents.meta.hasNextPage) return;
 
     await fetchMore({
       variables: {
         query: { limit: 10, page: page + 1 },
       },
       updateQuery: (prev, { fetchMoreResult }) => {
-        if (!fetchMoreResult || fetchMoreResult.myEvents.length === 0)
+        if (!fetchMoreResult || fetchMoreResult.myEvents.data.length === 0)
           return prev;
         return Object.assign({}, prev, {
-          myEvents: [...prev.myEvents, ...fetchMoreResult.myEvents],
+          myEvents: {
+            ...fetchMoreResult.myEvents,
+            data: [...prev.myEvents.data, ...fetchMoreResult.myEvents.data],
+          },
         });
       },
     });
     setPage((p) => p + 1);
   };
 
-  if (isError) {
+  if (error) {
     return (
       <Paper p="xl" withBorder radius="md" ta="center">
         <Text c="red" fw={500} mb="sm">
@@ -96,8 +97,8 @@ export default function MyEventsPage() {
         <InfiniteScrollList<EventEntity>
           items={events as EventEntity[]}
           isLoading={isLoading}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={data?.myEvents.meta?.hasNextPage ?? false}
+          isFetchingNextPage={networkStatus === 3}
           fetchNextPage={fetchNextPage}
           emptyMessage="You haven't created any events yet."
           renderItem={(event) => {
