@@ -7,7 +7,10 @@ import { join } from 'path';
 
 import { KafkaCircuitBreaker, PaginationResult } from '@app/common';
 import { UserEntity } from '@app/contracts/auth/user.entity';
-import { PaginatedBooking } from '@app/contracts/bookings/booking.entity';
+import {
+  BookingEntity,
+  PaginatedBooking,
+} from '@app/contracts/bookings/booking.entity';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
 import { CreateEventDto } from '@app/contracts/events/create-event.dto';
 import { EventQueryDto } from '@app/contracts/events/event-query.dto';
@@ -79,7 +82,7 @@ export class EventsResolver {
     return event;
   }
 
-  @Query(() => PaginatedBooking)
+  @Query(() => [BookingEntity])
   eventBookings(
     @Args('eventId') eventId: string,
     @Context('req') request: AuthenticatedRequest,
