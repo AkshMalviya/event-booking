@@ -27,7 +27,7 @@ echo "Step 2: Building Backend API Image"
 docker build -t $USERNAME/event-booking-api:latest ./api
 
 echo "=========================================="
-echo "Step 3: Pushing Backend API Image"
+echo "Step 3: Pushing Backend API Image "
 docker push $USERNAME/event-booking-api:latest
 
 echo "=========================================="
