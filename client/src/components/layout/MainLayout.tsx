@@ -1,6 +1,13 @@
 "use client";
-import { AppShell, NavLink, Stack } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import {
+  ActionIcon,
+  Affix,
+  AppShell,
+  NavLink,
+  Stack,
+  Transition,
+} from "@mantine/core";
+import { useDisclosure, useWindowScroll } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
@@ -8,14 +15,16 @@ import { FiCalendar, FiPlus } from "react-icons/fi";
 import { HiOutlineTicket } from "react-icons/hi2";
 import { MdEvent } from "react-icons/md";
 import Header from "./header/Header";
+import { FaArrowUpLong } from "react-icons/fa6";
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
   const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
+  const [scroll, scrollTo] = useWindowScroll();
 
   const navItems = [
     {
-      label: "Dashboard",
+      label: "Discover",
       description: "Discover upcoming events",
       icon: <FiCalendar size={18} />,
       href: "/dashboard",
@@ -46,16 +55,18 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppShell
-      padding="md"
-      header={{ height: { base: 60, md: 70 } }}
+      padding="sm"
+      header={{
+        height: 70,
+      }}
       navbar={{
-        width: { base: 240, md: 280 },
+        width: 250,
         breakpoint: "sm",
-        collapsed: { mobile: !opened },
+        collapsed: { desktop: true, mobile: !opened },
       }}
     >
-      <AppShell.Header>
-        <Header opened={opened} toggle={toggle} />
+      <AppShell.Header bd="none" bg="transparent" zIndex={100}>
+        <Header opened={opened} toggle={toggle} navItem={navItems} />
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
@@ -84,7 +95,22 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      <AppShell.Main>
+        {children}
+        <Affix position={{ bottom: 20, right: 20 }}>
+          <Transition transition="slide-up" mounted={scroll.y > 0}>
+            {(transitionStyles) => (
+              <ActionIcon
+                size={"input-md"}
+                style={transitionStyles}
+                onClick={() => scrollTo({ y: 0 })}
+              >
+                <FaArrowUpLong size={16} />
+              </ActionIcon>
+            )}
+          </Transition>
+        </Affix>
+      </AppShell.Main>
     </AppShell>
   );
 };

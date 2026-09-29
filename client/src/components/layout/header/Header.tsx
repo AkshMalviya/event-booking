@@ -1,27 +1,35 @@
-import { useMutation } from "@apollo/client/react";
 import { LogoutDocument } from "@/generated/graphql";
 import { useAppSelector } from "@/store/hooks";
+import { useMutation } from "@apollo/client/react";
 import {
   Avatar,
   Box,
   Burger,
   Group,
   Menu,
-  Stack,
   Text,
   Title,
   UnstyledButton,
 } from "@mantine/core";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { memo } from "react";
+import { JSX, memo } from "react";
 import { FiChevronDown, FiLogOut } from "react-icons/fi";
+import classes from "./index.module.scss";
 
 interface IProps {
   opened: boolean;
   toggle: () => void;
+  navItem: {
+    label: string;
+    description: string;
+    icon: JSX.Element;
+    href: string;
+    active: boolean;
+  }[];
 }
 
-const Header = ({ opened, toggle }: IProps) => {
+const Header = ({ opened, toggle, navItem }: IProps) => {
   const router = useRouter();
   const [logout, { loading: isPending }] = useMutation(LogoutDocument);
   const user = useAppSelector((state) => state.user);
@@ -38,9 +46,14 @@ const Header = ({ opened, toggle }: IProps) => {
   };
 
   return (
-    <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+    <div className={classes.root}>
       <Group gap="sm">
-        <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+        <Burger
+          opened={opened}
+          onClick={toggle}
+          className={classes.burger}
+          size="sm"
+        />
         <Title
           order={3}
           fw={700}
@@ -52,30 +65,30 @@ const Header = ({ opened, toggle }: IProps) => {
         </Title>
       </Group>
 
-      {/* User profile dropdown and status */}
-      <Group gap="md">
-        <Menu shadow="md" width={220} position="bottom-end">
-          <Menu.Target>
-            <UnstyledButton
-              p={6}
-              style={{
-                borderRadius: "8px",
-                transition: "background-color 150ms ease",
-              }}
-              className="user-profile-btn"
+      <Group gap={"24px"} className={classes.navItems}>
+        {navItem.map((item) => {
+          return (
+            <Link
+              href={item.href}
+              key={item.href}
+              className={item.active ? classes.active : classes.item}
             >
+              <Text fw={600} size="sm">
+                {item.label}
+              </Text>
+            </Link>
+          );
+        })}
+      </Group>
+
+      <Group gap="md">
+        <Menu shadow="md" width={220} position="bottom" withArrow>
+          <Menu.Target>
+            <UnstyledButton p={6}>
               <Group gap="xs">
                 <Avatar size="sm" radius="xl" color="blue">
                   {user.name ? user.name[0].toUpperCase() : "A"}
                 </Avatar>
-                <Stack gap={0} visibleFrom="sm">
-                  <Text size="sm" fw={600} lh={1.2}>
-                    {user.name || "Aksh"}
-                  </Text>
-                  <Text size="xs" c="dimmed" lh={1.2}>
-                    {user.email || "aksh@eventz.com"}
-                  </Text>
-                </Stack>
                 <FiChevronDown size={14} />
               </Group>
             </UnstyledButton>
@@ -83,9 +96,6 @@ const Header = ({ opened, toggle }: IProps) => {
 
           <Menu.Dropdown>
             <Box p="xs">
-              <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb={4}>
-                User Profile
-              </Text>
               <Text fw={600} size="sm">
                 {user.name || "Aksh"}
               </Text>
@@ -105,7 +115,7 @@ const Header = ({ opened, toggle }: IProps) => {
           </Menu.Dropdown>
         </Menu>
       </Group>
-    </Group>
+    </div>
   );
 };
 

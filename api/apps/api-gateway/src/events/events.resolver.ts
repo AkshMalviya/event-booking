@@ -20,6 +20,7 @@ import {
 } from '@app/contracts/events/event.entity';
 import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
 import { UpdateEventDto } from '@app/contracts/events/update-event.dto';
+import { Public } from '../auth/public.decorator';
 
 type AuthenticatedRequest = Request & {
   user: UserEntity;
@@ -69,6 +70,7 @@ export class EventsResolver {
   }
 
   @Query(() => EventEntity)
+  @Public()
   async event(@Args('slug') slug: string) {
     const event = await this.eventBreaker.send<EventEntity | null>(
       EVENT_PATTERNS.FIND_ONE,

@@ -1,0 +1,37 @@
+.root {
+  background-color: rgb(237, 237, 237);
+  width: 90%;
+  border-radius: 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin: 10px auto;
+  transition: all 0.3s ease;
+}
+
+.item {
+  :hover {
+    color: #3a4bdd;
+  }
+}
+
+.active {
+  color: #3a4bdd;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.burger {
+  @media (min-width: 769px) {
+    display: none !important;
+  }
+}
+
+.navItems {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}

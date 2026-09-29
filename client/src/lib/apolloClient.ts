@@ -1,14 +1,11 @@
-"use client";
 import { ApolloClient, InMemoryCache, from } from "@apollo/client";
 import { ErrorLink } from "@apollo/client/link/error";
 import { CombinedGraphQLErrors } from "@apollo/client/errors";
 import UploadHttpLink from "apollo-upload-client/UploadHttpLink.mjs";
 
-// Error interceptor to handle unauthenticated globally
 const errorLink = new ErrorLink(({ error }) => {
   if (CombinedGraphQLErrors.is(error)) {
     error.errors.forEach(({ message, extensions }) => {
-      // Typically the backend might return extensions.code === "UNAUTHENTICATED"
       if (
         extensions?.code === "UNAUTHENTICATED" ||
         message.includes("Unauthorized")
