@@ -5,6 +5,7 @@ import {
   Avatar,
   Box,
   Burger,
+  Button,
   Group,
   Menu,
   Text,
@@ -14,7 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { JSX, memo } from "react";
-import { FiChevronDown, FiLogOut } from "react-icons/fi";
+import { FiChevronDown, FiLogOut, FiPlusCircle } from "react-icons/fi";
 import classes from "./index.module.scss";
 
 interface IProps {
@@ -79,6 +80,14 @@ const Header = ({ opened, toggle, navItem }: IProps) => {
             </Link>
           );
         })}
+
+        <Button
+          leftSection={<FiPlusCircle size={18} />}
+          variant="gradient"
+          onClick={() => router.push("/events/create")}
+        >
+          Create Event
+        </Button>
       </Group>
 
       <Group gap="md">

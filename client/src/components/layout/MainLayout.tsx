@@ -11,7 +11,7 @@ import { useDisclosure, useWindowScroll } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
-import { FiCalendar, FiPlus } from "react-icons/fi";
+import { FiCalendar } from "react-icons/fi";
 import { HiOutlineTicket } from "react-icons/hi2";
 import { MdEvent } from "react-icons/md";
 import Header from "./header/Header";
@@ -43,13 +43,6 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
       icon: <MdEvent size={18} />,
       href: "/my-events",
       active: pathname === "/my-events",
-    },
-    {
-      label: "Create Event",
-      description: "Host and publish a new event",
-      href: "/events/create",
-      icon: <FiPlus size={18} />,
-      active: pathname === "/events/create",
     },
   ];
 
