@@ -53,10 +53,12 @@ const BookingCard = ({
   const isSoldOut = seatsLeft <= 0;
   const isOrganizer = !!user.id && user.id === userId;
 
+  const start = new Date(startDate);
+  const end = new Date(endDate);
   const now = new Date();
-  const isUpcoming = startDate > now;
-  const isStarted = startDate <= now && endDate > now;
-  const isEnded = endDate <= now;
+  const isUpcoming = start > now;
+  const isStarted = start <= now && end > now;
+  const isEnded = end <= now;
 
   const showMessage = getMessageAndColor({
     isOrganizer: isOrganizer,
