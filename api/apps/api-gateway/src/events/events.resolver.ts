@@ -2,8 +2,8 @@ import { Inject, NotFoundException } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ClientKafka } from '@nestjs/microservices';
 import type { Request } from 'express';
-import { createWriteStream } from 'fs';
-import { join } from 'path';
+import { createWriteStream } from 'node:fs';
+import { join } from 'node:path';
 
 import { KafkaCircuitBreaker, PaginationResult } from '@app/common';
 import { UserEntity } from '@app/contracts/auth/user.entity';
@@ -28,8 +28,8 @@ type AuthenticatedRequest = Request & {
 
 @Resolver(() => EventEntity)
 export class EventsResolver {
-  private eventBreaker: KafkaCircuitBreaker;
-  private bookingBreaker: KafkaCircuitBreaker;
+  private readonly eventBreaker: KafkaCircuitBreaker;
+  private readonly bookingBreaker: KafkaCircuitBreaker;
 
   constructor(
     @Inject('EVENT_SERVICE')
@@ -108,7 +108,7 @@ export class EventsResolver {
 
     if (data.image) {
       const upload = await data.image;
-      if (upload && upload.createReadStream) {
+      if (upload?.createReadStream()) {
         const { createReadStream, filename } = upload;
         const uniqueFilename = `${Date.now()}-${filename}`;
         const uploadPath = join(process.cwd(), 'uploads', uniqueFilename);
@@ -150,7 +150,7 @@ export class EventsResolver {
 
     if (data.image) {
       const upload = await data.image;
-      if (upload && upload.createReadStream) {
+      if (upload?.createReadStream()) {
         const { createReadStream, filename } = upload;
         const uniqueFilename = `${Date.now()}-${filename}`;
         const uploadPath = join(process.cwd(), 'uploads', uniqueFilename);

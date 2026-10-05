@@ -18,7 +18,7 @@ type AuthenticatedRequest = Request & {
 
 @Resolver(() => BookingEntity)
 export class BookingsResolver {
-  private breaker: KafkaCircuitBreaker;
+  private readonly breaker: KafkaCircuitBreaker;
 
   constructor(
     @Inject('BOOKING_SERVICE')

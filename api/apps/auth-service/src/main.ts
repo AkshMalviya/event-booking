@@ -12,7 +12,10 @@ dotenv.config({ path: 'apps/auth-service/.env' });
 async function bootstrap() {
   if (process.env.STARTUP_DELAY) {
     await new Promise((resolve) =>
-      setTimeout(resolve, parseInt(process.env.STARTUP_DELAY ?? '3000', 10)),
+      setTimeout(
+        resolve,
+        Number.parseInt(process.env.STARTUP_DELAY ?? '3000', 10),
+      ),
     );
   }
   const app = await NestFactory.createMicroservice(AuthServiceModule, {

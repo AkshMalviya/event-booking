@@ -35,8 +35,8 @@ const Header = ({ opened, toggle, navItem }: IProps) => {
   const [logout, { loading: isPending }] = useMutation(LogoutDocument);
   const user = useAppSelector((state) => state.user);
 
-  const handleLogout = () => {
-    logout({
+  const handleLogout = async () => {
+    await logout({
       onCompleted: () => {
         router.push("/login");
       },

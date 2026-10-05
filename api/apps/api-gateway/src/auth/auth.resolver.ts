@@ -11,7 +11,7 @@ import { Public } from './public.decorator';
 
 @Resolver('auth')
 export class AuthResolver {
-  private breaker: KafkaCircuitBreaker;
+  private readonly breaker: KafkaCircuitBreaker;
 
   constructor(
     @Inject('AUTH_SERVICE')
@@ -40,7 +40,7 @@ export class AuthResolver {
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
 

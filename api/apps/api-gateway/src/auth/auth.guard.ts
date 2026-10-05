@@ -27,7 +27,7 @@ type AccessTokenPayload = {
 
 @Injectable()
 export class AuthGuard implements CanActivate, OnModuleInit {
-  private breaker: KafkaCircuitBreaker;
+  private readonly breaker: KafkaCircuitBreaker;
 
   constructor(
     private readonly reflector: Reflector,
