@@ -101,6 +101,17 @@ export enum EventTimeline {
   Upcoming = 'UPCOMING'
 }
 
+export type GenerateSuggestionDto = {
+  type: Scalars['String']['input'];
+  userPreferences: Scalars['String']['input'];
+};
+
+export type GenerateSuggestionResponseDto = {
+  __typename?: 'GenerateSuggestionResponseDto';
+  message: Scalars['String']['output'];
+  suggestions: Array<Scalars['String']['output']>;
+};
+
 export type LoginDto = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -111,6 +122,7 @@ export type Mutation = {
   cancelBooking: BookingEntity;
   createBooking: BookingEntity;
   createEvent: EventEntity;
+  generateSuggestion: GenerateSuggestionResponseDto;
   login: UserEntity;
   logout: Scalars['String']['output'];
   register: Scalars['String']['output'];
@@ -131,6 +143,11 @@ export type MutationCreateBookingArgs = {
 export type MutationCreateEventArgs = {
   data: CreateEventDto;
   idempotencyKey?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationGenerateSuggestionArgs = {
+  input: GenerateSuggestionDto;
 };
 
 
@@ -288,6 +305,11 @@ export type EventTimeline =
   | 'PAST'
   | 'UPCOMING';
 
+export type GenerateSuggestionDto = {
+  type: string;
+  userPreferences: string;
+};
+
 export type LoginDto = {
   email: string;
   password: string;
@@ -312,6 +334,13 @@ export type UpdateEventDto = {
   tags?: Array<string> | null | undefined;
   title?: string | null | undefined;
 };
+
+export type GenerateSuggestionMutationVariables = Exact<{
+  input: GenerateSuggestionDto;
+}>;
+
+
+export type GenerateSuggestionMutation = { generateSuggestion: { message: string, suggestions: Array<string> } };
 
 export type LoginUserMutationVariables = Exact<{
   input: LoginDto;
@@ -403,6 +432,7 @@ export type MyEventsQueryVariables = Exact<{
 export type MyEventsQuery = { myEvents: { meta: { total: number, page: number, limit: number, hasNextPage: boolean }, data: Array<{ id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any }> } };
 
 
+export const GenerateSuggestionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateSuggestion"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"GenerateSuggestionDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateSuggestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"suggestions"}}]}}]}}]} as unknown as DocumentNode<GenerateSuggestionMutation, GenerateSuggestionMutationVariables>;
 export const LoginUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LoginUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<LoginUserMutation, LoginUserMutationVariables>;
 export const LogoutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"}}]}}]} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const SignupDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Signup"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SignupDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"register"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode<SignupMutation, SignupMutationVariables>;

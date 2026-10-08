@@ -1,0 +1,6 @@
+mutation GenerateSuggestion($input: GenerateSuggestionDto!) {
+  generateSuggestion(input: $input) {
+    message
+    suggestions
+  }
+}

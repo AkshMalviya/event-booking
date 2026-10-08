@@ -44,6 +44,16 @@
     {
       "type": "node-terminal",
       "request": "launch",
+      "name": "AI Service",
+      "command": "npm run dev:ai",
+      "cwd": "${workspaceFolder}/api",
+      "presentation": {
+        "group": "API"
+      }
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
       "name": "Next.js Client",
       "command": "npm run dev",
       "cwd": "${workspaceFolder}/client",
@@ -72,7 +82,8 @@
         "Gateway (API)",
         "Auth Service",
         "Event Service",
-        "Booking Service"
+        "Booking Service",
+        "AI Service"
       ],
       "presentation": {
         "group": "Commands"

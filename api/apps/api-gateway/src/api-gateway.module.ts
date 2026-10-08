@@ -10,6 +10,7 @@ import { Request, Response } from 'express';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { KafkaClientsModule } from './kafka-clients.module';
 import { DateScalar } from '@app/common';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { DateScalar } from '@app/common';
     AuthModule,
     EventsModule,
     BookingsModule,
+    AiModule,
   ],
   providers: [DateScalar],
 })

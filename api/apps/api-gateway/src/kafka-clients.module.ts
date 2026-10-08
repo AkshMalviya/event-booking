@@ -10,6 +10,7 @@ import { KAFKA_RETRY_CONFIG } from '@app/common';
 import { AUTH_PATTERNS } from '@app/contracts/auth/auth.patterns';
 import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
 import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
+import { AI_PATTERNS } from '@app/contracts/ai/at.pattern';
 
 @Global()
 @Module({
@@ -30,8 +31,13 @@ import { BOOKING_PATTERNS } from '@app/contracts/bookings/booking.patterns';
       useFactory: (config: ConfigService) =>
         createKafkaClient('booking', config),
     },
+    {
+      provide: 'AI_SERVICE',
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => createKafkaClient('ai', config),
+    },
   ],
-  exports: ['AUTH_SERVICE', 'EVENT_SERVICE', 'BOOKING_SERVICE'],
+  exports: ['AUTH_SERVICE', 'EVENT_SERVICE', 'BOOKING_SERVICE', 'AI_SERVICE'],
 })
 export class KafkaClientsModule implements OnModuleInit {
   constructor(
@@ -39,12 +45,15 @@ export class KafkaClientsModule implements OnModuleInit {
     @Inject('AUTH_SERVICE') private readonly authClient: ClientKafka,
     @Inject('EVENT_SERVICE') private readonly eventClient: ClientKafka,
     @Inject('BOOKING_SERVICE') private readonly bookingClient: ClientKafka,
+    @Inject('AI_SERVICE') private readonly aiClient: ClientKafka,
   ) {}
 
   async preCreateTopics() {
     const kafka = new Kafka({
       clientId: 'topic-creator',
-      brokers: [this.configService.get<string>('KAFKA_BROKERS') || 'localhost:9092'],
+      brokers: [
+        this.configService.get<string>('KAFKA_BROKERS') || 'localhost:9092',
+      ],
     });
     const admin = kafka.admin();
     try {
@@ -53,7 +62,11 @@ export class KafkaClientsModule implements OnModuleInit {
         ...Object.values(AUTH_PATTERNS),
         ...Object.values(BOOKING_PATTERNS),
         ...Object.values(EVENT_PATTERNS),
-      ].flatMap((pattern) => [{ topic: pattern }, { topic: `${pattern}.reply` }]);
+        ...Object.values(AI_PATTERNS),
+      ].flatMap((pattern) => [
+        { topic: pattern },
+        { topic: `${pattern}.reply` },
+      ]);
       await admin.createTopics({
         topics,
         waitForLeaders: true,
@@ -76,6 +89,9 @@ export class KafkaClientsModule implements OnModuleInit {
     Object.values(BOOKING_PATTERNS).forEach((pattern) =>
       this.bookingClient.subscribeToResponseOf(pattern),
     );
+    Object.values(AI_PATTERNS).forEach((pattern) =>
+      this.aiClient.subscribeToResponseOf(pattern),
+    );
 
     await this.preCreateTopics();
 
@@ -84,6 +100,7 @@ export class KafkaClientsModule implements OnModuleInit {
         this.authClient.connect(),
         this.eventClient.connect(),
         this.bookingClient.connect(),
+        this.aiClient.connect(),
       ]);
     } catch (err) {
       console.warn('Kafka connection delayed:', (err as Error).message);

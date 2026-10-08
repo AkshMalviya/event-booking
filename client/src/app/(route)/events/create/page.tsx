@@ -15,13 +15,18 @@ import {
   FileInput,
   Image,
   Box,
+  Tooltip,
+  ActionIcon,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
-import { CreateEventDocument } from "@/generated/graphql";
+import {
+  CreateEventDocument,
+  GenerateSuggestionDocument,
+} from "@/generated/graphql";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { createEventSchema } from "@/validation/event.schema";
 import {
@@ -32,13 +37,66 @@ import {
   FiTag,
   FiCheckCircle,
 } from "react-icons/fi";
+import { RiSparkling2Fill } from "react-icons/ri";
+
+type TSuggestion = {
+  title: string[];
+  description: string[];
+};
+
+function SuggestionItem({
+  text,
+  onAccept,
+}: Readonly<{
+  text: string;
+  onAccept: () => void;
+}>) {
+  return (
+    <Paper
+      py="4px"
+      px={"xs"}
+      style={{
+        backgroundColor: "var(--mantine-color-blue-light)",
+        transition: "background-color 0.2s ease",
+      }}
+    >
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Text size="sm">{text}</Text>
+
+        <Tooltip label="Accept Suggestion">
+          <ActionIcon
+            variant="subtle"
+            size={"input-sm"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAccept();
+            }}
+          >
+            <FiCheckCircle />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+    </Paper>
+  );
+}
 
 export default function CreateEventPage() {
   const router = useRouter();
-  const [createEvent, { loading: isPending }] = useMutation(CreateEventDocument);
+  const [suggestion, setSuggestion] = useState<TSuggestion>({
+    title: [],
+    description: [],
+  });
+  const [loadingType, setLoadingType] = useState<
+    "title" | "description" | null
+  >(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  const [createEvent, { loading: isPending }] =
+    useMutation(CreateEventDocument);
+  const [generateSuggestion, { loading: isSuggestionPending }] = useMutation(
+    GenerateSuggestionDocument,
+  );
   const form = useForm({
     initialValues: {
       title: "",
@@ -66,7 +124,7 @@ export default function CreateEventPage() {
     }
   };
 
-  const handleSubmit = (values: typeof form.values) => {
+  const handleSubmit = async (values: typeof form.values) => {
     if (!values.startDate || new Date(values.startDate) <= new Date()) {
       notifications.show({
         title: "Invalid Start Time",
@@ -96,7 +154,7 @@ export default function CreateEventPage() {
           .filter(Boolean)
       : [];
 
-    createEvent({
+    await createEvent({
       variables: {
         data: {
           title: values.title.trim(),
@@ -127,11 +185,63 @@ export default function CreateEventPage() {
       onError: (err) => {
         notifications.show({
           title: "Event Creation Failed",
-          message: err.message || "Failed to create event. Please check your input.",
+          message:
+            err.message || "Failed to create event. Please check your input.",
           color: "red",
         });
       },
     });
+  };
+
+  const handleSuggestion = async (type: "title" | "description") => {
+    const value =
+      type === "title" ? form.values.title : form.values.description;
+
+    if (value.trim().length < 5) {
+      notifications.show({
+        title: "Input Too Short",
+        message: `Please enter at least 5 characters for the ${type} to generate suggestions.`,
+        color: "yellow",
+      });
+      return;
+    }
+
+    setLoadingType(type);
+    try {
+      const generate = await generateSuggestion({
+        variables: {
+          input: {
+            type: type,
+            userPreferences: value,
+          },
+        },
+      });
+
+      if (generate.data?.generateSuggestion.suggestions) {
+        setSuggestion((prev) => {
+          if (type === "title") {
+            return {
+              ...prev,
+              title: generate.data?.generateSuggestion?.suggestions || [],
+            };
+          } else {
+            return {
+              ...prev,
+              description: generate.data?.generateSuggestion?.suggestions || [],
+            };
+          }
+        });
+      }
+    } catch (err: any) {
+      notifications.show({
+        title: "Suggestion Failed",
+        message:
+          err.message || "Failed to generate suggestions. Please try again.",
+        color: "red",
+      });
+    } finally {
+      setLoadingType(null);
+    }
   };
 
   return (
@@ -153,14 +263,73 @@ export default function CreateEventPage() {
                 label="Event Title"
                 placeholder="e.g. Next.js & AI Developers Summit 2026"
                 {...form.getInputProps("title")}
+                rightSection={
+                  <Tooltip label="Suggest Title">
+                    <ActionIcon
+                      variant="subtle"
+                      color="blue"
+                      onClick={() => handleSuggestion("title")}
+                      loading={isSuggestionPending && loadingType === "title"}
+                    >
+                      <RiSparkling2Fill />
+                    </ActionIcon>
+                  </Tooltip>
+                }
               />
+              {suggestion.title.length > 0 && (
+                <Stack gap="xs" mt="-xs">
+                  {suggestion.title.map((title, index) => (
+                    <SuggestionItem
+                      key={index}
+                      text={title}
+                      onAccept={() => {
+                        form.setFieldValue("title", title);
+                        setSuggestion((prev) => ({ ...prev, title: [] }));
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
 
               <Textarea
-                label="Description"
+                label={
+                  <Group gap="xs" mb={4}>
+                    <Text component="span" size="sm" fw={500}>
+                      Description
+                    </Text>
+                    <Tooltip label="Suggest Description">
+                      <ActionIcon
+                        size="sm"
+                        variant="subtle"
+                        color="blue"
+                        onClick={() => handleSuggestion("description")}
+                        loading={
+                          isSuggestionPending && loadingType === "description"
+                        }
+                      >
+                        <RiSparkling2Fill />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                }
                 placeholder="Provide details about the event schedule, speakers, topics, and venue..."
-                minRows={4}
+                rows={4}
                 {...form.getInputProps("description")}
               />
+              {suggestion.description.length > 0 && (
+                <Stack gap="xs" mt="-xs">
+                  {suggestion.description.map((desc, index) => (
+                    <SuggestionItem
+                      key={index}
+                      text={desc}
+                      onAccept={() => {
+                        form.setFieldValue("description", desc);
+                        setSuggestion((prev) => ({ ...prev, description: [] }));
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
 
               {/* Single Image Upload via Multer */}
               <div>

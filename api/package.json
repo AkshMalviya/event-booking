@@ -23,6 +23,7 @@
     "dev:auth": "nest start --watch auth-service",
     "dev:event": "nest start --watch event-service",
     "dev:booking": "nest start --watch booking-service",
+    "dev:ai": "nest start --watch ai-service",
     "lint": "oxlint src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -50,6 +51,7 @@
     "graphql-upload-ts": "^2.1.2",
     "kafkajs": "^2.2.4",
     "mongoose": "^9.9.5",
+    "openai": "^7.28.0",
     "opossum": "^8.1.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
