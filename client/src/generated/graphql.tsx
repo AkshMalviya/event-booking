@@ -51,6 +51,28 @@ export enum BookingTimelineFilter {
   Upcoming = 'UPCOMING'
 }
 
+export type ChatDto = {
+  conversationId?: InputMaybe<Scalars['String']['input']>;
+  message: Scalars['String']['input'];
+};
+
+export type ChatHistoryItem = {
+  __typename?: 'ChatHistoryItem';
+  _id?: Maybe<Scalars['String']['output']>;
+  conversationId: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export type ChatResponse = {
+  __typename?: 'ChatResponse';
+  conversationId: Maybe<Scalars['String']['output']>;
+  eventDraft: Maybe<EventDraft>;
+  reply: Scalars['String']['output'];
+};
+
 export type CreateBookingDto = {
   eventId: Scalars['String']['input'];
   ticketsCount: Scalars['Int']['input'];
@@ -65,6 +87,19 @@ export type CreateEventDto = {
   startDate: Scalars['String']['input'];
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   title: Scalars['String']['input'];
+};
+
+export type EventDraft = {
+  __typename?: 'EventDraft';
+  capacity: Scalars['Int']['output'];
+  date: Maybe<Scalars['String']['output']>;
+  description: Scalars['String']['output'];
+  endDate: Maybe<Scalars['String']['output']>;
+  location: Scalars['String']['output'];
+  price: Maybe<Scalars['Int']['output']>;
+  startDate: Maybe<Scalars['String']['output']>;
+  tags: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
 };
 
 export type EventEntity = {
@@ -120,9 +155,11 @@ export type LoginDto = {
 export type Mutation = {
   __typename?: 'Mutation';
   cancelBooking: BookingEntity;
+  chat: ChatResponse;
   createBooking: BookingEntity;
   createEvent: EventEntity;
   generateSuggestion: GenerateSuggestionResponseDto;
+  getChatHistory: Array<ChatHistoryItem>;
   login: UserEntity;
   logout: Scalars['String']['output'];
   register: Scalars['String']['output'];
@@ -132,6 +169,11 @@ export type Mutation = {
 
 export type MutationCancelBookingArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationChatArgs = {
+  input: ChatDto;
 };
 
 
@@ -189,6 +231,7 @@ export type PaginatedMeta = {
 export type Query = {
   __typename?: 'Query';
   booking: BookingEntity;
+  chatHistory: Array<ChatHistoryItem>;
   event: EventEntity;
   eventBookings: Array<BookingEntity>;
   events: PaginatedEvents;
@@ -274,6 +317,11 @@ export type BookingTimelineFilter =
   | 'PAST'
   | 'UPCOMING';
 
+export type ChatDto = {
+  conversationId?: string | null | undefined;
+  message: string;
+};
+
 export type CreateBookingDto = {
   eventId: string;
   ticketsCount: number;
@@ -334,6 +382,21 @@ export type UpdateEventDto = {
   tags?: Array<string> | null | undefined;
   title?: string | null | undefined;
 };
+
+export type ChatMutationVariables = Exact<{
+  input: ChatDto;
+}>;
+
+
+export type ChatMutation = { chat: { reply: string, conversationId: string | null, eventDraft: { title: string, description: string, capacity: number, date: string | null, startDate: string | null, endDate: string | null, price: number | null, tags: string | null } | null } };
+
+export type ChatHistoryQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ChatHistoryQuery = { chatHistory: Array<{ _id?: string | null, conversationId: string, title: string, createdAt?: any | null, updatedAt?: any | null }> };
+
+export type GetChatHistoryMutationVariables = Exact<{ [key: string]: never; }>;
+
+export type GetChatHistoryMutation = { getChatHistory: Array<{ _id?: string | null, conversationId: string, title: string, createdAt?: any | null, updatedAt?: any | null }> };
 
 export type GenerateSuggestionMutationVariables = Exact<{
   input: GenerateSuggestionDto;
@@ -432,6 +495,9 @@ export type MyEventsQueryVariables = Exact<{
 export type MyEventsQuery = { myEvents: { meta: { total: number, page: number, limit: number, hasNextPage: boolean }, data: Array<{ id: string, userId: string, title: string, slug: string, image: string | null, description: string, startDate: any, endDate: any, availableSeats: number, price: number, tags: Array<string>, registeredCount: number, createdAt: any, updatedAt: any }> } };
 
 
+export const ChatDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Chat"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ChatDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"chat"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reply"}},{"kind":"Field","name":{"kind":"Name","value":"conversationId"}},{"kind":"Field","name":{"kind":"Name","value":"eventDraft"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"capacity"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}}]}}]}}]}}]} as unknown as DocumentNode<ChatMutation, ChatMutationVariables>;
+export const ChatHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ChatHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"chatHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"conversationId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<ChatHistoryQuery, ChatHistoryQueryVariables>;
+export const GetChatHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GetChatHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getChatHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"conversationId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetChatHistoryMutation, GetChatHistoryMutationVariables>;
 export const GenerateSuggestionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateSuggestion"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"GenerateSuggestionDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateSuggestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"suggestions"}}]}}]}}]} as unknown as DocumentNode<GenerateSuggestionMutation, GenerateSuggestionMutationVariables>;
 export const LoginUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LoginUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginDto"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<LoginUserMutation, LoginUserMutationVariables>;
 export const LogoutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"}}]}}]} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;

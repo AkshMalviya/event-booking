@@ -1,0 +1,42 @@
+{
+  "type": "function",
+  "function": {
+    "name": "create_event_draft",
+    "description": "Create or update the user's event draft immediately. Restrict strictly to event form fields (title, description, startDate, endDate, capacity, price, tags). There is NO location field in the form. If title or description are not provided, generate creative ones based on the topic. Always set price in Rupees (INR / ₹) as an integer (0 for free). When duration is specified (e.g. '2 days'), compute endDate by adding days to startDate. Always generate 3-5 relevant comma-separated tags.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The event title"
+        },
+        "description": {
+          "type": "string",
+          "description": "A compelling, well-written 2-3 sentence description of the event"
+        },
+        "capacity": {
+          "type": "integer",
+          "description": "The maximum number of attendees / available seats"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The event start date in YYYY-MM-DD format"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The event end date in YYYY-MM-DD format. If duration is given (e.g. '2 days'), compute endDate = startDate + duration. Must NOT equal startDate if duration > 1 day."
+        },
+        "price": {
+          "type": "integer",
+          "description": "The ticket price in Rupees (INR / ₹) as an integer (0 for free events)"
+        },
+        "tags": {
+          "type": "string",
+          "description": "Comma-separated keywords/tags relevant to the event (e.g. 'navratri, garba, dandiya, festival')"
+        }
+      },
+      "required": ["title", "description", "capacity", "startDate", "endDate"],
+      "additionalProperties": false
+    }
+  }
+}

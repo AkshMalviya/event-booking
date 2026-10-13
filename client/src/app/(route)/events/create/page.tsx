@@ -38,6 +38,7 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import { RiSparkling2Fill } from "react-icons/ri";
+import ChatBot from "@/components/chatbot/ChatBot";
 
 type TSuggestion = {
   title: string[];
@@ -232,11 +233,12 @@ export default function CreateEventPage() {
           }
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       notifications.show({
         title: "Suggestion Failed",
         message:
-          err.message || "Failed to generate suggestions. Please try again.",
+          (err as Error).message ||
+          "Failed to generate suggestions. Please try again.",
         color: "red",
       });
     } finally {
@@ -245,190 +247,196 @@ export default function CreateEventPage() {
   };
 
   return (
-    <Container size="md" py="xl">
-      <Paper radius="md" p="xl" withBorder shadow="sm">
-        <Stack gap="lg">
-          <div>
-            <Title order={2} fw={700}>
-              Create New Event
-            </Title>
-            <Text size="sm" c="dimmed">
-              Fill in the details below to publish your upcoming event
-            </Text>
-          </div>
+    <>
+      <Container size="md" py="xl" style={{ overflowY: "hidden" }}>
+        <Paper radius="md" p="xl" withBorder shadow="sm">
+          <Stack gap="lg">
+            <div>
+              <Title order={2} fw={700}>
+                Create New Event
+              </Title>
+              <Text size="sm" c="dimmed">
+                Fill in the details below to publish your upcoming event
+              </Text>
+            </div>
 
-          <form onSubmit={form.onSubmit(handleSubmit)}>
-            <Stack gap="md">
-              <TextInput
-                label="Event Title"
-                placeholder="e.g. Next.js & AI Developers Summit 2026"
-                {...form.getInputProps("title")}
-                rightSection={
-                  <Tooltip label="Suggest Title">
-                    <ActionIcon
-                      variant="subtle"
-                      color="blue"
-                      onClick={() => handleSuggestion("title")}
-                      loading={isSuggestionPending && loadingType === "title"}
-                    >
-                      <RiSparkling2Fill />
-                    </ActionIcon>
-                  </Tooltip>
-                }
-              />
-              {suggestion.title.length > 0 && (
-                <Stack gap="xs" mt="-xs">
-                  {suggestion.title.map((title, index) => (
-                    <SuggestionItem
-                      key={index}
-                      text={title}
-                      onAccept={() => {
-                        form.setFieldValue("title", title);
-                        setSuggestion((prev) => ({ ...prev, title: [] }));
-                      }}
-                    />
-                  ))}
-                </Stack>
-              )}
-
-              <Textarea
-                label={
-                  <Group gap="xs" mb={4}>
-                    <Text component="span" size="sm" fw={500}>
-                      Description
-                    </Text>
-                    <Tooltip label="Suggest Description">
+            <form onSubmit={form.onSubmit(handleSubmit)}>
+              <Stack gap="md">
+                <TextInput
+                  label="Event Title"
+                  placeholder="e.g. Next.js & AI Developers Summit 2026"
+                  {...form.getInputProps("title")}
+                  rightSection={
+                    <Tooltip label="Suggest Title">
                       <ActionIcon
-                        size="sm"
                         variant="subtle"
                         color="blue"
-                        onClick={() => handleSuggestion("description")}
-                        loading={
-                          isSuggestionPending && loadingType === "description"
-                        }
+                        onClick={() => handleSuggestion("title")}
+                        loading={isSuggestionPending && loadingType === "title"}
                       >
                         <RiSparkling2Fill />
                       </ActionIcon>
                     </Tooltip>
-                  </Group>
-                }
-                placeholder="Provide details about the event schedule, speakers, topics, and venue..."
-                rows={4}
-                {...form.getInputProps("description")}
-              />
-              {suggestion.description.length > 0 && (
-                <Stack gap="xs" mt="-xs">
-                  {suggestion.description.map((desc, index) => (
-                    <SuggestionItem
-                      key={index}
-                      text={desc}
-                      onAccept={() => {
-                        form.setFieldValue("description", desc);
-                        setSuggestion((prev) => ({ ...prev, description: [] }));
-                      }}
-                    />
-                  ))}
-                </Stack>
-              )}
-
-              {/* Single Image Upload via Multer */}
-              <div>
-                <FileInput
-                  label="Event Banner Image"
-                  description="Upload a banner image for your event (JPG, PNG, WebP up to 5MB)"
-                  placeholder="Click to select an image"
-                  accept="image/png,image/jpeg,image/webp"
-                  leftSection={<FiUpload size={16} />}
-                  value={imageFile}
-                  onChange={handleImageChange}
-                  clearable
+                  }
                 />
-
-                {imagePreview && (
-                  <Box mt="sm">
-                    <Text size="xs" c="dimmed" mb={4}>
-                      Image Preview:
-                    </Text>
-                    <Image
-                      src={imagePreview}
-                      alt="Banner Preview"
-                      height={180}
-                      radius="md"
-                      fit="cover"
-                    />
-                  </Box>
+                {suggestion.title.length > 0 && (
+                  <Stack gap="xs" mt="-xs">
+                    {suggestion.title.map((title, index) => (
+                      <SuggestionItem
+                        key={index + "i"}
+                        text={title}
+                        onAccept={() => {
+                          form.setFieldValue("title", title);
+                          setSuggestion((prev) => ({ ...prev, title: [] }));
+                        }}
+                      />
+                    ))}
+                  </Stack>
                 )}
-              </div>
 
-              {/* Mantine DateTimePicker for Start and End Date & Time */}
-              <Group grow align="flex-start">
-                <DateTimePicker
-                  label="Start Date & Time"
-                  placeholder="Pick start date and time"
-                  minDate={new Date()}
-                  valueFormat="YYYY-MM-DD HH:mm"
-                  leftSection={<FiCalendar size={16} />}
-                  clearable
-                  {...form.getInputProps("startDate")}
+                <Textarea
+                  label={
+                    <Group gap="xs" mb={4}>
+                      <Text component="span" size="sm" fw={500}>
+                        Description
+                      </Text>
+                      <Tooltip label="Suggest Description">
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="blue"
+                          onClick={() => handleSuggestion("description")}
+                          loading={
+                            isSuggestionPending && loadingType === "description"
+                          }
+                        >
+                          <RiSparkling2Fill />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  }
+                  placeholder="Provide details about the event schedule, speakers, topics, and venue..."
+                  rows={4}
+                  {...form.getInputProps("description")}
+                />
+                {suggestion.description.length > 0 && (
+                  <Stack gap="xs" mt="-xs">
+                    {suggestion.description.map((desc, index) => (
+                      <SuggestionItem
+                        key={"i" + index}
+                        text={desc}
+                        onAccept={() => {
+                          form.setFieldValue("description", desc);
+                          setSuggestion((prev) => ({
+                            ...prev,
+                            description: [],
+                          }));
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                )}
+
+                {/* Single Image Upload via Multer */}
+                <div>
+                  <FileInput
+                    label="Event Banner Image"
+                    description="Upload a banner image for your event (JPG, PNG, WebP up to 5MB)"
+                    placeholder="Click to select an image"
+                    accept="image/png,image/jpeg,image/webp"
+                    leftSection={<FiUpload size={16} />}
+                    value={imageFile}
+                    onChange={handleImageChange}
+                    clearable
+                  />
+
+                  {imagePreview && (
+                    <Box mt="sm">
+                      <Text size="xs" c="dimmed" mb={4}>
+                        Image Preview:
+                      </Text>
+                      <Image
+                        src={imagePreview}
+                        alt="Banner Preview"
+                        height={180}
+                        radius="md"
+                        fit="cover"
+                      />
+                    </Box>
+                  )}
+                </div>
+
+                {/* Mantine DateTimePicker for Start and End Date & Time */}
+                <Group grow align="flex-start">
+                  <DateTimePicker
+                    label="Start Date & Time"
+                    placeholder="Pick start date and time"
+                    minDate={new Date()}
+                    valueFormat="YYYY-MM-DD HH:mm"
+                    leftSection={<FiCalendar size={16} />}
+                    clearable
+                    {...form.getInputProps("startDate")}
+                  />
+
+                  <DateTimePicker
+                    label="End Date & Time"
+                    placeholder="Pick end date and time"
+                    minDate={form.values.startDate || new Date()}
+                    valueFormat="YYYY-MM-DD HH:mm"
+                    leftSection={<FiCalendar size={16} />}
+                    clearable
+                    {...form.getInputProps("endDate")}
+                  />
+                </Group>
+
+                <Group grow align="flex-start">
+                  <NumberInput
+                    label="Available Seats"
+                    min={1}
+                    description={`The maximum number of attendees for this event.`}
+                    leftSection={<FiUsers size={16} />}
+                    {...form.getInputProps("availableSeats")}
+                  />
+
+                  <NumberInput
+                    label="Price ($ USD)"
+                    min={0}
+                    step={1}
+                    leftSection={<FiDollarSign size={16} />}
+                    description="Set to 0 for a free event"
+                    {...form.getInputProps("price")}
+                  />
+                </Group>
+
+                <TextInput
+                  label="Tags"
+                  placeholder="e.g. technology, react, summit, workshop (comma-separated)"
+                  leftSection={<FiTag size={16} />}
+                  {...form.getInputProps("tags")}
                 />
 
-                <DateTimePicker
-                  label="End Date & Time"
-                  placeholder="Pick end date and time"
-                  minDate={form.values.startDate || new Date()}
-                  valueFormat="YYYY-MM-DD HH:mm"
-                  leftSection={<FiCalendar size={16} />}
-                  clearable
-                  {...form.getInputProps("endDate")}
-                />
-              </Group>
-
-              <Group grow align="flex-start">
-                <NumberInput
-                  label="Available Seats"
-                  min={1}
-                  description={`The maximum number of attendees for this event.`}
-                  leftSection={<FiUsers size={16} />}
-                  {...form.getInputProps("availableSeats")}
-                />
-
-                <NumberInput
-                  label="Price ($ USD)"
-                  min={0}
-                  step={1}
-                  leftSection={<FiDollarSign size={16} />}
-                  description="Set to 0 for a free event"
-                  {...form.getInputProps("price")}
-                />
-              </Group>
-
-              <TextInput
-                label="Tags"
-                placeholder="e.g. technology, react, summit, workshop (comma-separated)"
-                leftSection={<FiTag size={16} />}
-                {...form.getInputProps("tags")}
-              />
-
-              <Group justify="flex-end" mt="lg">
-                <Button
-                  variant="default"
-                  onClick={() => router.push("/dashboard")}
-                  disabled={isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  leftSection={<FiCheckCircle size={16} />}
-                  loading={isPending}
-                >
-                  Create Event
-                </Button>
-              </Group>
-            </Stack>
-          </form>
-        </Stack>
-      </Paper>
-    </Container>
+                <Group justify="flex-end" mt="lg">
+                  <Button
+                    variant="default"
+                    onClick={() => router.push("/dashboard")}
+                    disabled={isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    leftSection={<FiCheckCircle size={16} />}
+                    loading={isPending}
+                  >
+                    Create Event
+                  </Button>
+                </Group>
+              </Stack>
+            </form>
+          </Stack>
+        </Paper>
+      </Container>
+      <ChatBot form={form} />
+    </>
   );
 }

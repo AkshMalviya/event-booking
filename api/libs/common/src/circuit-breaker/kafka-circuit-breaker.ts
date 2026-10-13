@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import CircuitBreaker from 'opossum';
-import { lastValueFrom, Observable, retry } from 'rxjs';
+import { lastValueFrom, Observable, retry, timer } from 'rxjs';
 
 @Injectable()
 export class KafkaCircuitBreaker {
   private readonly logger = new Logger(KafkaCircuitBreaker.name);
-  private breakers = new Map<string, CircuitBreaker>();
+  private readonly breakers = new Map<string, CircuitBreaker>();
 
   constructor(private readonly kafkaClient: ClientKafka) {}
 
@@ -34,7 +34,17 @@ export class KafkaCircuitBreaker {
           this.kafkaClient.send(pattern, data).pipe(
             retry({
               count: 3,
-              delay: 1000,
+              delay: (error, retryCount) => {
+                const status =
+                  error?.status ||
+                  error?.statusCode ||
+                  error?.response?.statusCode;
+                // If it's a 4xx error (like 401 Unauthorized), do NOT retry!
+                if (status && status >= 400 && status < 500) {
+                  throw error;
+                }
+                return timer(1000);
+              },
             }),
           ),
         );

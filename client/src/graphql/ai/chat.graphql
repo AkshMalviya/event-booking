@@ -1,0 +1,16 @@
+mutation Chat($input: ChatDto!) {
+  chat(input: $input) {
+    reply
+    conversationId
+    eventDraft {
+      title
+      description
+      capacity
+      date
+      startDate
+      endDate
+      price
+      tags
+    }
+  }
+}

@@ -24,7 +24,7 @@
 
     "strict": true,
     "strictPropertyInitialization": false,
-
+    "resolveJsonModule": true,
     "types": ["vitest/globals", "node"],
     "baseUrl": "./",
     "paths": {

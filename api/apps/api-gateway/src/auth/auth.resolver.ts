@@ -8,6 +8,7 @@ import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ClientKafka } from '@nestjs/microservices';
 import type { Request, Response } from 'express';
 import { Public } from './public.decorator';
+import { RateLimit } from '../services/rate-limit.decorator';
 
 @Resolver('auth')
 export class AuthResolver {
@@ -28,6 +29,7 @@ export class AuthResolver {
 
   @Mutation(() => UserEntity)
   @Public()
+  @RateLimit({ numberOfRequest: 1, timeInterval: 1000 })
   async login(
     @Args('input', { type: () => LoginDto }) data: LoginDto,
     @Context('res') response: Response,

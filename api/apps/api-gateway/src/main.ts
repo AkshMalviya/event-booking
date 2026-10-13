@@ -7,6 +7,7 @@ import * as fs from 'node:fs';
 import { join } from 'node:path';
 import { ApiGatewayModule } from './api-gateway.module';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
+import { RpcExceptionInterceptor } from './interceptors/rpc-exception.interceptor';
 
 dotenv.config({ path: 'apps/api-gateway/.env' });
 
@@ -24,6 +25,7 @@ async function bootstrap() {
   });
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalInterceptors(new RpcExceptionInterceptor());
   app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
   const uploadDir = join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadDir)) {

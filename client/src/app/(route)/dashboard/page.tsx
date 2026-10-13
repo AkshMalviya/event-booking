@@ -25,10 +25,10 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FiCheck, FiFilter, FiPlus, FiSearch } from "react-icons/fi";
+import { debounceWithSearch } from "@/utils/debounceAndThrottle";
 
 type TTimeline = "upcoming" | "ongoing" | "past";
 type TSortOrder = "asc" | "desc";
@@ -48,7 +48,16 @@ export default function DashboardPage() {
     timeline: "upcoming" as TTimeline,
   });
 
-  const [debouncedSearch] = useDebouncedValue(filters.search, 800);
+  const [localSearch, setLocalSearch] = useState(filters.search || "");
+
+  const debouncedUpdateFilter = useMemo(
+    () =>
+      debounceWithSearch((value: string) => {
+        updateFilter({ search: value });
+        setPage(1);
+      }, 800),
+    [updateFilter],
+  );
 
   const {
     data,
@@ -60,7 +69,7 @@ export default function DashboardPage() {
   } = useQuery(EventsDocument, {
     variables: {
       query: {
-        search: debouncedSearch || undefined,
+        search: filters.search || undefined,
         isFree: filters.isFree || undefined,
         sortBy: filters.sortBy || undefined,
         sortOrder: filters.sortOrder === "asc" ? SortOrder.Asc : SortOrder.Desc,
@@ -83,7 +92,7 @@ export default function DashboardPage() {
     await fetchMore({
       variables: {
         query: {
-          search: debouncedSearch || undefined,
+          search: filters.search || undefined,
           isFree: filters.isFree || undefined,
           sortBy: filters.sortBy || undefined,
           sortOrder:
@@ -147,10 +156,11 @@ export default function DashboardPage() {
           <TextInput
             placeholder="Search events by title, description, or tags..."
             leftSection={<FiSearch size={16} />}
-            value={filters.search}
+            value={localSearch}
             onChange={(e) => {
-              updateFilter({ search: e.currentTarget.value });
-              setPage(1);
+              const val = e.currentTarget.value;
+              setLocalSearch(val);
+              debouncedUpdateFilter(val);
             }}
             style={{ flex: 1, minWidth: 250 }}
           />
@@ -255,6 +265,7 @@ export default function DashboardPage() {
               color="gray"
               onClick={() => {
                 resetFilters();
+                setLocalSearch("");
                 setPage(1);
               }}
             >

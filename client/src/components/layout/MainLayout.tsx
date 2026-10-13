@@ -90,7 +90,7 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
 
       <AppShell.Main>
         {children}
-        <Affix position={{ bottom: 20, right: 20 }}>
+        {/* <Affix position={{ bottom: 20, right: 20 }}>
           <Transition transition="slide-up" mounted={scroll.y > 0}>
             {(transitionStyles) => (
               <ActionIcon
@@ -102,7 +102,7 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
               </ActionIcon>
             )}
           </Transition>
-        </Affix>
+        </Affix> */}
       </AppShell.Main>
     </AppShell>
   );

@@ -1,0 +1,9 @@
+query ChatHistory {
+  chatHistory {
+    _id
+    conversationId
+    title
+    createdAt
+    updatedAt
+  }
+}
