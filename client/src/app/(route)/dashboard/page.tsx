@@ -291,9 +291,7 @@ export default function DashboardPage() {
               <DashboardCard
                 event={event}
                 key={eventId}
-                onViewClick={() => {
-                  router.push(`/event/${eventSlug}`);
-                }}
+                link={`/event/${eventSlug}`}
               />
             );
           }}

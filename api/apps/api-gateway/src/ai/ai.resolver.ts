@@ -1,12 +1,16 @@
 import { KafkaCircuitBreaker } from '@app/common';
 import { AI_PATTERNS } from '@app/contracts/ai/at.pattern';
 import { ChatDto } from '@app/contracts/ai/chat.dto';
-import { ChatHistoryItem, ChatResponse } from '@app/contracts/ai/chat.entities';
+import {
+  ChatHistoryItem,
+  ChatResponse,
+  PaginatedChatMessages,
+} from '@app/contracts/ai/chat.entities';
 import { GenerateSuggestionDto } from '@app/contracts/ai/generateSuggestion.dto';
 import { GenerateSuggestionResponseDto } from '@app/contracts/ai/suggestionEntities';
 import { UserEntity } from '@app/contracts/auth/user.entity';
 import { Inject } from '@nestjs/common';
-import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ClientKafka } from '@nestjs/microservices';
 
 type AuthenticatedRequest = Request & {
@@ -59,6 +63,31 @@ export class AiResolver {
     } catch (error: any) {
       throw new Error(
         error?.message || error?.error || 'Failed to fetch chat history',
+      );
+    }
+  }
+
+  @Query(() => PaginatedChatMessages, { name: 'conversationMessages' })
+  async conversationMessages(
+    @Args('conversationId') conversationId: string,
+    @Args('cursor', { nullable: true, type: () => String }) cursor?: string,
+    @Args('limit', { nullable: true, type: () => Int, defaultValue: 20 })
+    limit = 20,
+  ) {
+    try {
+      return await this.breaker.send<PaginatedChatMessages>(
+        AI_PATTERNS.GET_CHAT_MESSAGE_BY_CONVERSTAION_ID,
+        {
+          conversationId,
+          cursor,
+          limit,
+        },
+      );
+    } catch (error: any) {
+      throw new Error(
+        error?.message ||
+          error?.error ||
+          'Failed to fetch conversation messages',
       );
     }
   }

@@ -6,9 +6,12 @@ import { BullModule } from '@nestjs/bullmq';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Chats, ChatsSchema } from './schema/chat.schema';
-import { ConversationPersistenceService } from './conversation-persistence/conversation-persistence.service';
-import { ConversationPersistenceProcessor } from './conversation-persistence/conversation-persistence.processor';
 import { ChatHistory, ChatHistorySchema } from './schema/chatHistory.schema';
+import { PaginationService } from '@app/common';
+import { ImageGenerationService } from './service/image-generation/image-generation.service';
+import { ConversationPersistenceService } from './service/conversation-persistence/conversation-persistence.service';
+import { ConversationPersistenceProcessor } from './service/conversation-persistence/conversation-persistence.processor';
+import { ChromaModule } from './chroma/chroma.module';
 
 @Module({
   imports: [
@@ -37,12 +40,15 @@ import { ChatHistory, ChatHistorySchema } from './schema/chatHistory.schema';
       { name: Chats.name, schema: ChatsSchema },
       { name: ChatHistory.name, schema: ChatHistorySchema },
     ]),
+    ChromaModule,
   ],
   controllers: [AiServiceController],
   providers: [
     AiServiceService,
+    ImageGenerationService,
     ConversationPersistenceService,
     ConversationPersistenceProcessor,
+    PaginationService,
   ],
 })
 export class AiServiceModule {}

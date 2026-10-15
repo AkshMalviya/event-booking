@@ -2,8 +2,11 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { InjectModel } from '@nestjs/mongoose';
 import { Job } from 'bullmq';
 import mongoose, { Model } from 'mongoose';
-import { Chats, ChatsDocument } from '../schema/chat.schema';
-import { ChatHistory, ChatHistoryDocument } from '../schema/chatHistory.schema';
+import { Chats, ChatsDocument } from '../../schema/chat.schema';
+import {
+  ChatHistory,
+  ChatHistoryDocument,
+} from '../../schema/chatHistory.schema';
 
 @Processor('conversation-persistence')
 export class ConversationPersistenceProcessor extends WorkerHost {

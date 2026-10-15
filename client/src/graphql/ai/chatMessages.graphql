@@ -1,0 +1,24 @@
+query ConversationMessages($conversationId: String!, $cursor: String, $limit: Int) {
+  conversationMessages(conversationId: $conversationId, cursor: $cursor, limit: $limit) {
+    messages {
+      _id
+      role
+      content
+      conversationId
+      timestamp
+      draftedEvent {
+        title
+        description
+        capacity
+        date
+        startDate
+        endDate
+        price
+        tags
+        imageUrl
+      }
+    }
+    nextCursor
+    hasMore
+  }
+}

@@ -15,12 +15,9 @@ import { useQuery } from "@apollo/client/react";
 import { ChatHistoryDocument, ChatHistoryItem } from "@/generated/graphql";
 import {
   RiChat3Line,
-  RiTimeLine,
   RiAddLine,
   RiSearchLine,
-  RiRefreshLine,
   RiHistoryLine,
-  RiArrowLeftLine,
   RiCloseLine,
 } from "react-icons/ri";
 import classes from "./ChatHistory.module.scss";
@@ -32,7 +29,6 @@ interface ChatHistoryProps {
     title: string;
   }) => void;
   onNewChat: () => void;
-  onClose?: () => void;
 }
 
 const formatDate = (val?: string | number | Date | null) => {
@@ -51,12 +47,11 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   currentConversationId,
   onSelectConversation,
   onNewChat,
-  onClose,
 }) => {
   const [search, setSearch] = useState("");
 
-  const { data, loading, refetch } = useQuery(ChatHistoryDocument, {
-    fetchPolicy: "network-only",
+  const { data, loading } = useQuery(ChatHistoryDocument, {
+    fetchPolicy: "cache-first",
   });
 
   const historyList = useMemo(() => {

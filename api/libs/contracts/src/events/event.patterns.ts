@@ -7,4 +7,5 @@ export const EVENT_PATTERNS = {
   RELEASE_SEATS: 'events.release-seats',
   FILTER_BY_TIMELINE: 'events.filter-by-timeline',
   FIND_ALL_ORGANIZER: 'events.find-all-organizer',
+  EVENT_CREATED: 'events.event-created',
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Paper,
@@ -17,6 +17,7 @@ import {
   Box,
   Tooltip,
   ActionIcon,
+  Badge,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { DateTimePicker } from "@mantine/dates";
@@ -25,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
 import {
   CreateEventDocument,
+  EventDraft,
   GenerateSuggestionDocument,
 } from "@/generated/graphql";
 import { yupResolver } from "mantine-form-yup-resolver";
@@ -38,7 +40,7 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import { RiSparkling2Fill } from "react-icons/ri";
-import ChatBot from "@/components/chatbot/ChatBot";
+import { applyDraftToForm } from "@/utils/draft.utils";
 
 type TSuggestion = {
   title: string[];
@@ -92,6 +94,7 @@ export default function CreateEventPage() {
   >(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isAiImage, setIsAiImage] = useState<boolean>(false);
 
   const [createEvent, { loading: isPending }] =
     useMutation(CreateEventDocument);
@@ -114,6 +117,7 @@ export default function CreateEventPage() {
 
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
+    setIsAiImage(false);
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -124,6 +128,55 @@ export default function CreateEventPage() {
       setImagePreview(null);
     }
   };
+
+  const handleApplyDraft = async (draft: EventDraft) => {
+    await applyDraftToForm(draft, form, {
+      onImagePreview: (url) => {
+        setImagePreview(url);
+        setIsAiImage(true);
+      },
+      onImageFile: (file) => setImageFile(file),
+    });
+
+    notifications.show({
+      title: "Draft Applied!",
+      message: draft.imageUrl
+        ? "Event details and AI banner preview have been populated into the form."
+        : "Event details have been populated into the form.",
+      color: "teal",
+    });
+  };
+
+  useEffect(() => {
+    const handleDraftEvent = (e: CustomEvent<EventDraft>) => {
+      if (e.detail) {
+        void handleApplyDraft(e.detail);
+      }
+    };
+
+    window.addEventListener(
+      "apply_event_draft" as any,
+      handleDraftEvent as any,
+    );
+
+    const pending = sessionStorage.getItem("pending_event_draft");
+    if (pending) {
+      try {
+        const parsed = JSON.parse(pending);
+        sessionStorage.removeItem("pending_event_draft");
+        void handleApplyDraft(parsed);
+      } catch (err) {
+        console.warn("Failed to apply pending draft:", err);
+      }
+    }
+
+    return () => {
+      window.removeEventListener(
+        "apply_event_draft" as any,
+        handleDraftEvent as any,
+      );
+    };
+  }, []);
 
   const handleSubmit = async (values: typeof form.values) => {
     if (!values.startDate || new Date(values.startDate) <= new Date()) {
@@ -337,11 +390,11 @@ export default function CreateEventPage() {
                   </Stack>
                 )}
 
-                {/* Single Image Upload via Multer */}
+                {/* Single Image Upload via Multer or AI Generation */}
                 <div>
                   <FileInput
                     label="Event Banner Image"
-                    description="Upload a banner image for your event (JPG, PNG, WebP up to 5MB)"
+                    description="Upload a banner image or generate one using the AI assistant (JPG, PNG, WebP)"
                     placeholder="Click to select an image"
                     accept="image/png,image/jpeg,image/webp"
                     leftSection={<FiUpload size={16} />}
@@ -351,14 +404,47 @@ export default function CreateEventPage() {
                   />
 
                   {imagePreview && (
-                    <Box mt="sm">
-                      <Text size="xs" c="dimmed" mb={4}>
-                        Image Preview:
-                      </Text>
+                    <Box
+                      mt="sm"
+                      p="xs"
+                      style={{
+                        border: "1px solid var(--mantine-color-default-border)",
+                        borderRadius: 12,
+                        backgroundColor: "var(--mantine-color-default-hover)",
+                      }}
+                    >
+                      <Group justify="space-between" align="center" mb={6}>
+                        <Group gap="xs">
+                          <Text size="xs" fw={700} c="dimmed">
+                            Banner Preview:
+                          </Text>
+                          {isAiImage && (
+                            <Badge
+                              size="xs"
+                              variant="gradient"
+                              gradient={{ from: "indigo", to: "cyan" }}
+                            >
+                              AI Generated Banner (HD)
+                            </Badge>
+                          )}
+                        </Group>
+                        <Button
+                          variant="subtle"
+                          color="red"
+                          size="xs"
+                          onClick={() => {
+                            setImagePreview(null);
+                            setImageFile(null);
+                            setIsAiImage(false);
+                          }}
+                        >
+                          Remove Image
+                        </Button>
+                      </Group>
                       <Image
                         src={imagePreview}
                         alt="Banner Preview"
-                        height={180}
+                        height={200}
                         radius="md"
                         fit="cover"
                       />
@@ -436,7 +522,6 @@ export default function CreateEventPage() {
           </Stack>
         </Paper>
       </Container>
-      <ChatBot form={form} />
     </>
   );
 }

@@ -42,6 +42,10 @@ export class EventDraft {
   @Prop({ type: String })
   @Field(() => String, { nullable: true })
   tags?: string;
+
+  @Prop({ type: String })
+  @Field(() => String, { nullable: true })
+  imageUrl?: string;
 }
 
 export const EventDraftSchema = SchemaFactory.createForClass(EventDraft);

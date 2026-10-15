@@ -11,6 +11,7 @@ import {
   Divider,
   SimpleGrid,
   Button,
+  Skeleton,
 } from "@mantine/core";
 import {
   RiCalendarEventLine,
@@ -20,8 +21,11 @@ import {
   RiPriceTag3Line,
   RiInformationLine,
   RiSparkling2Line,
+  RiExternalLinkLine,
 } from "react-icons/ri";
 import classes from "./EventDraftPreview.module.scss";
+import { formatDraftDisplayDates } from "@/utils/draft.utils";
+import { useRouter, usePathname } from "next/navigation";
 
 export type EventDraft = {
   title: string;
@@ -32,6 +36,8 @@ export type EventDraft = {
   endDate?: string | null;
   price?: number | null;
   tags?: string | null;
+  imageUrl?: string | null;
+  location?: string | null;
 };
 
 interface EventDraftPreviewProps {
@@ -40,87 +46,39 @@ interface EventDraftPreviewProps {
   canApply?: boolean;
 }
 
-const formatDates = (
-  startDate?: string | null,
-  endDate?: string | null,
-  fallbackDate?: string | null,
-): { label: string; duration: string | null } => {
-  const start = startDate || fallbackDate;
-  if (!start) return { label: "Not specified", duration: null };
-
-  const parsedStart = new Date(
-    start.includes("T") ? start : `${start}T00:00:00`,
-  );
-  if (Number.isNaN(parsedStart.getTime())) {
-    return { label: start, duration: null };
-  }
-
-  const startDay = parsedStart.getDate();
-  const startMonth = parsedStart.toLocaleDateString("en-IN", {
-    month: "short",
-  });
-  const startYear = parsedStart.getFullYear();
-
-  if (!endDate || endDate === start) {
-    return {
-      label: `${startDay} ${startMonth} ${startYear}`,
-      duration: "1 day",
-    };
-  }
-
-  const parsedEnd = new Date(
-    endDate.includes("T") ? endDate : `${endDate}T00:00:00`,
-  );
-  if (Number.isNaN(parsedEnd.getTime())) {
-    return {
-      label: `${startDay} ${startMonth} ${startYear} - ${endDate}`,
-      duration: null,
-    };
-  }
-
-  const endDay = parsedEnd.getDate();
-  const endMonth = parsedEnd.toLocaleDateString("en-IN", { month: "short" });
-  const endYear = parsedEnd.getFullYear();
-
-  const diffTime = parsedEnd.getTime() - parsedStart.getTime();
-  const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
-  const durationStr = diffDays === 1 ? "1 day" : `${diffDays} days`;
-
-  if (startYear === endYear && startMonth === endMonth) {
-    return {
-      label: `${startDay} - ${endDay} ${startMonth} ${startYear}`,
-      duration: durationStr,
-    };
-  }
-
-  if (startYear === endYear) {
-    return {
-      label: `${startDay} ${startMonth} - ${endDay} ${endMonth} ${startYear}`,
-      duration: durationStr,
-    };
-  }
-
-  return {
-    label: `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`,
-    duration: durationStr,
-  };
-};
-
 const EventDraftPreview = ({
   draft,
   onApply,
   canApply = true,
 }: EventDraftPreviewProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isCreatePage = pathname === "/events/create";
+
   const [isAccepted, setIsAccepted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleApply = () => {
+    setIsAccepted(true);
     if (onApply) {
       onApply();
-      setIsAccepted(true);
+    } else {
+      if (isCreatePage) {
+        window.dispatchEvent(
+          new CustomEvent("apply_event_draft", { detail: draft }),
+        );
+      } else {
+        sessionStorage.setItem("pending_event_draft", JSON.stringify(draft));
+        router.push("/events/create");
+      }
     }
   };
 
-  const dateInfo = formatDates(draft.startDate, draft.endDate, draft.date);
+  const dateInfo = formatDraftDisplayDates(
+    draft.startDate,
+    draft.endDate,
+    draft.date,
+  );
 
   return (
     <Card
@@ -172,6 +130,44 @@ const EventDraftPreview = ({
         </div>
 
         <Divider />
+
+        {/* Event Poster Banner (if generated) */}
+        {draft.imageUrl && (
+          <div className={classes.posterWrapper}>
+            {!imageLoaded && (
+              <Skeleton
+                height="100%"
+                width="100%"
+                radius="md"
+                animate
+                style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}
+              />
+            )}
+            <img
+              src={draft.imageUrl}
+              alt={draft.title || "Event Poster"}
+              className={classes.posterImage}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setImageLoaded(true)}
+              style={{ opacity: imageLoaded ? 1 : 0 }}
+            />
+            <div className={classes.posterBadge}>
+              <Badge size="xs" variant="filled" color="dark">
+                🎨 AI Poster • 720p HD
+              </Badge>
+            </div>
+            <a
+              href={draft.imageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={classes.externalLink}
+              title="Open full resolution in new tab"
+            >
+              <RiExternalLinkLine size={14} />
+            </a>
+          </div>
+        )}
 
         {/* Title */}
         <Stack gap={2}>
@@ -275,7 +271,7 @@ const EventDraftPreview = ({
         )}
 
         {/* Action Button */}
-        {onApply && canApply && (
+        {canApply && (
           <Button
             fullWidth
             variant={isAccepted ? "light" : "gradient"}
@@ -295,7 +291,11 @@ const EventDraftPreview = ({
             className={classes.actionButton}
             disabled={isAccepted}
           >
-            {isAccepted ? "Inserted" : "Insert"}
+            {isAccepted
+              ? "Inserted"
+              : isCreatePage
+              ? "Insert into Form"
+              : "Apply & Go to Create Event"}
           </Button>
         )}
 
@@ -305,7 +305,9 @@ const EventDraftPreview = ({
           <span>
             {isAccepted
               ? "Details inserted into the form. You can review or edit anytime."
-              : "Click Insert to populate your form, or ask for changes."}
+              : isCreatePage
+              ? "Click Insert to populate your form, or ask for changes."
+              : "Click Apply to open Create Event page with these details."}
           </span>
         </div>
       </Stack>

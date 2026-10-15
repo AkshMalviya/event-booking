@@ -66,5 +66,5 @@ export class CreateEventDto {
 
   @Field(() => GraphQLUpload, { nullable: true })
   @IsOptional()
-  image?: Promise<FileUpload>;
+  image?: Promise<FileUpload> | string;
 }

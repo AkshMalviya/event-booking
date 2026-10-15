@@ -11,6 +11,7 @@ export default async function EventDetailsPage({
   const { data, error } = await apolloClient.query({
     query: EventBySlugDocument,
     variables: { slug },
+    fetchPolicy: "network-only",
   });
 
   return <EventDetails event={data?.event} error={error} />;

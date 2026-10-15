@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, memo } from "react";
+import React, { useState, useRef, useEffect, memo, useCallback } from "react";
 import {
   ActionIcon,
   Tooltip,
@@ -10,9 +10,14 @@ import {
   Group,
   Avatar,
 } from "@mantine/core";
-import { useMutation } from "@apollo/client/react";
-import { UseFormReturnType } from "@mantine/form";
-import { ChatDocument } from "@/generated/graphql";
+import { useMutation, useLazyQuery } from "@apollo/client/react";
+import {
+  ChatDocument,
+  ChatMessageItem,
+  ConversationMessagesDocument,
+  ConversationMessagesQuery,
+  EventDraft,
+} from "@/generated/graphql";
 import {
   RiSparkling2Fill,
   RiSendPlaneFill,
@@ -24,9 +29,12 @@ import {
   RiAddLine,
 } from "react-icons/ri";
 import { marked } from "marked";
-import EventDraftPreview, { EventDraft } from "./EventDraftPreview";
+import EventDraftPreview from "./EventDraftPreview";
+import EventSuggestionCard from "./EventSuggestionCard";
 import ChatHistory from "./ChatHistory";
 import classes from "./ChatBot.module.scss";
+import { useRouter, usePathname } from "next/navigation";
+import { parseEventSuggestions } from "@/utils/eventMessageParser";
 
 type Message = {
   id: string;
@@ -36,11 +44,15 @@ type Message = {
 };
 
 interface ChatBotProps {
-  form?: UseFormReturnType<unknown>;
   onApplyDraft?: (draft: EventDraft) => void;
 }
 
-const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
+type ConversationMessage =
+  ConversationMessagesQuery["conversationMessages"]["messages"][number];
+
+const ChatBot = ({ onApplyDraft }: ChatBotProps = {}) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [opened, setOpened] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -53,24 +65,58 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
     },
   ]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+  const shouldScrollBottomRef = useRef(true);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const [chat, { loading }] = useMutation(ChatDocument);
-
-  const scrollToBottom = () => {
-    if (viewportRef.current) {
-      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
-    }
-  };
+  const [fetchConversationMessages] = useLazyQuery(
+    ConversationMessagesDocument,
+    {
+      fetchPolicy: "cache-first",
+    },
+  );
 
   useEffect(() => {
-    if (!showHistory) {
-      scrollToBottom();
+    if (!showHistory && shouldScrollBottomRef.current) {
+      if (viewportRef.current) {
+        viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+      }
     }
-  }, [messages, loading, opened, showHistory]);
+  }, [messages, loading, opened, showHistory, loadingConversation]);
 
-  const handleNewChat = () => {
+  const handleMarkdownClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = (e.target as HTMLElement).closest("a");
+      if (target) {
+        const href = target.getAttribute("href");
+        if (href && href.startsWith("/")) {
+          e.preventDefault();
+          if (isFullScreen) {
+            setIsFullScreen(false);
+          }
+          router.push(href);
+        }
+      }
+    },
+    [router, isFullScreen],
+  );
+
+  const mapToMessage = (m: ConversationMessage | ChatMessageItem): Message => ({
+    id: m._id ?? `${m.role}-${m.timestamp || Date.now()}`,
+    sender: m.role === "user" ? "user" : "ai",
+    text: m.content,
+    eventDraft: m.draftedEvent as EventDraft,
+  });
+
+  const handleNewChat = useCallback(() => {
     setConversationId(null);
+    setNextCursor(null);
+    setHasMore(false);
+    shouldScrollBottomRef.current = true;
     setMessages([
       {
         id: "welcome",
@@ -79,92 +125,133 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
       },
     ]);
     setShowHistory(false);
-  };
+  }, []);
 
-  const handleSelectConversation = (item: {
+  const handleSelectConversation = async (item: {
     conversationId: string;
     title: string;
   }) => {
     setConversationId(item.conversationId);
-    setMessages([
-      {
-        id: `resumed-${item.conversationId}`,
-        sender: "ai",
-        text: `Resumed conversation: **${item.title}**\n\nYou can continue asking questions or updating your event details.`,
-      },
-    ]);
     setShowHistory(false);
+    setLoadingConversation(true);
+    setNextCursor(null);
+    setHasMore(false);
+    shouldScrollBottomRef.current = true;
+
+    try {
+      const res = await fetchConversationMessages({
+        variables: {
+          conversationId: item.conversationId,
+          limit: 20,
+        },
+      });
+
+      const data = res.data?.conversationMessages;
+      if (data?.messages && data.messages.length > 0) {
+        setMessages(data.messages.map((e) => mapToMessage(e)));
+        setNextCursor(data.nextCursor ?? null);
+        setHasMore(Boolean(data.hasMore));
+      } else {
+        setMessages([
+          {
+            id: `resumed-${item.conversationId}`,
+            sender: "ai",
+            text: `Resumed conversation: **${item.title}**\n\nYou can continue asking questions or updating your event details.`,
+          },
+        ]);
+        setNextCursor(null);
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("Failed to load conversation messages:", err);
+      setMessages([
+        {
+          id: `resumed-${item.conversationId}`,
+          sender: "ai",
+          text: `Resumed conversation: **${item.title}**\n\nYou can continue asking questions or updating your event details.`,
+        },
+      ]);
+    } finally {
+      setLoadingConversation(false);
+    }
   };
 
-  const handleApplyDraft = (draft: EventDraft) => {
-    if (onApplyDraft) {
-      onApplyDraft(draft);
+  const loadMoreOlderMessages = async () => {
+    if (
+      !conversationId ||
+      !hasMore ||
+      !nextCursor ||
+      loadingMore ||
+      loadingConversation
+    ) {
       return;
     }
 
-    if (form) {
-      if (draft.title) {
-        form.setFieldValue("title", draft.title);
-      }
-      if (draft.description) {
-        form.setFieldValue("description", draft.description);
-      }
-      if (draft.capacity) {
-        form.setFieldValue("availableSeats", Number(draft.capacity));
-      }
+    const container = viewportRef.current;
+    const prevScrollHeight = container?.scrollHeight ?? 0;
+    const prevScrollTop = container?.scrollTop ?? 0;
 
-      const dateToUse = draft.startDate || draft.date;
-      if (dateToUse) {
-        const parsedStart = new Date(
-          dateToUse.includes("T") ? dateToUse : `${dateToUse}T10:00:00`,
-        );
-        if (!Number.isNaN(parsedStart.getTime())) {
-          form.setFieldValue("startDate", parsedStart);
+    setLoadingMore(true);
+    shouldScrollBottomRef.current = false;
 
-          if (draft.endDate) {
-            const parsedEnd = new Date(
-              draft.endDate.includes("T")
-                ? draft.endDate
-                : `${draft.endDate}T18:00:00`,
-            );
-            if (!Number.isNaN(parsedEnd.getTime())) {
-              form.setFieldValue("endDate", parsedEnd);
-            } else {
-              const fallbackEnd = new Date(
-                parsedStart.getTime() + 2 * 60 * 60 * 1000,
-              );
-              form.setFieldValue("endDate", fallbackEnd);
-            }
-          } else {
-            const fallbackEnd = new Date(
-              parsedStart.getTime() + 2 * 60 * 60 * 1000,
-            );
-            form.setFieldValue("endDate", fallbackEnd);
+    try {
+      const res = await fetchConversationMessages({
+        variables: {
+          conversationId,
+          cursor: nextCursor,
+          limit: 20,
+        },
+      });
+
+      const data = res.data?.conversationMessages;
+      if (data?.messages && data.messages.length > 0) {
+        const olderMessages = data.messages.map(mapToMessage);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const existingSignatures = new Set(
+            prev.map((m) => `${m.sender}:${m.text.trim()}`),
+          );
+          const uniqueOlder = olderMessages.filter(
+            (m) =>
+              !existingIds.has(m.id) &&
+              !existingSignatures.has(`${m.sender}:${m.text.trim()}`),
+          );
+          if (uniqueOlder.length === 0) {
+            return prev;
           }
-        }
-      }
+          return [...uniqueOlder, ...prev];
+        });
+        setNextCursor(data.nextCursor ?? null);
+        setHasMore(Boolean(data.hasMore));
 
-      if (draft.price !== undefined && draft.price !== null) {
-        form.setFieldValue("price", Number(draft.price));
+        requestAnimationFrame(() => {
+          if (viewportRef.current) {
+            const newScrollHeight = viewportRef.current.scrollHeight;
+            viewportRef.current.scrollTop =
+              newScrollHeight - prevScrollHeight + prevScrollTop;
+          }
+        });
+      } else {
+        setHasMore(false);
+        setNextCursor(null);
       }
+    } catch (err) {
+      console.error("Failed to load older messages:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
-      if (draft.tags) {
-        const formattedTags = draft.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean)
-          .map((tag) =>
-            tag
-              .split(/\s+/)
-              .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-              )
-              .join(" "),
-          )
-          .join(", ");
-        form.setFieldValue("tags", formattedTags);
-      }
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (
+      e.currentTarget.scrollTop < 40 &&
+      hasMore &&
+      !loadingMore &&
+      !loadingConversation &&
+      conversationId &&
+      nextCursor
+    ) {
+      void loadMoreOlderMessages();
     }
   };
 
@@ -175,17 +262,16 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
 
     const userMessage = message.trim();
     setMessage("");
+    shouldScrollBottomRef.current = true;
 
-    setMessages((prev) =>
-      [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          sender: "user" as const,
-          text: userMessage,
-        },
-      ].slice(-60),
-    );
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        sender: "user" as const,
+        text: userMessage,
+      },
+    ]);
 
     try {
       const { data } = await chat({
@@ -203,30 +289,28 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
           setConversationId(result.conversationId);
         }
 
-        setMessages((prev) =>
-          [
-            ...prev,
-            {
-              id: `${Date.now()}-ai`,
-              sender: "ai" as const,
-              text: result.reply,
-              eventDraft: result.eventDraft,
-            },
-          ].slice(-60),
-        );
+        shouldScrollBottomRef.current = true;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-ai`,
+            sender: "ai" as const,
+            text: result.reply,
+            eventDraft: result.eventDraft,
+          },
+        ]);
       }
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages((prev) =>
-        [
-          ...prev,
-          {
-            id: `${Date.now()}-error`,
-            sender: "ai" as const,
-            text: "Sorry, I'm having trouble connecting right now. Please try again.",
-          },
-        ].slice(-60),
-      );
+      shouldScrollBottomRef.current = true;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-error`,
+          sender: "ai" as const,
+          text: "Sorry, I'm having trouble connecting right now. Please try again.",
+        },
+      ]);
     }
   };
 
@@ -349,11 +433,40 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
               currentConversationId={conversationId}
               onSelectConversation={handleSelectConversation}
               onNewChat={handleNewChat}
-              onClose={() => setShowHistory(false)}
             />
+          ) : loadingConversation ? (
+            <div className={classes.centerLoader}>
+              <Loader size="sm" color="blue" />
+              <Text size="xs" c="dimmed">
+                Loading messages...
+              </Text>
+            </div>
           ) : (
             <>
-              <div ref={viewportRef} className={classes.messagesList}>
+              <div
+                ref={viewportRef}
+                className={classes.messagesList}
+                onScroll={handleScroll}
+              >
+                {loadingMore && (
+                  <div className={classes.loadingMoreContainer}>
+                    <Loader size="xs" color="blue" />
+                    <Text size="xs" c="dimmed">
+                      Loading older messages...
+                    </Text>
+                  </div>
+                )}
+
+                {hasMore && !loadingMore && (
+                  <button
+                    type="button"
+                    onClick={loadMoreOlderMessages}
+                    className={classes.loadMoreBtn}
+                  >
+                    Load earlier messages ↑
+                  </button>
+                )}
+
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -368,14 +481,37 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
                           : classes.aiBubble
                       }`}
                     >
-                      {msg.sender === "ai" ? (
-                        <div
-                          className={classes.markdownContent}
-                          dangerouslySetInnerHTML={{
-                            __html: marked.parse(msg.text) as string,
-                          }}
-                        />
-                      ) : (
+                      {msg.sender === "ai" ? (() => {
+                        const { headline, events } = parseEventSuggestions(msg.text);
+                        return (
+                          <>
+                            {headline && (
+                              <div
+                                className={classes.markdownContent}
+                                onClick={handleMarkdownClick}
+                                dangerouslySetInnerHTML={{
+                                  __html: marked.parse(headline) as string,
+                                }}
+                              />
+                            )}
+                            {events && events.length > 0 && (
+                              <div className={classes.suggestedEventsList}>
+                                {events.map((ev) => (
+                                  <EventSuggestionCard
+                                    key={ev.slug || ev.id}
+                                    event={ev}
+                                    onViewDetails={() => {
+                                      if (isFullScreen) {
+                                        setIsFullScreen(false);
+                                      }
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })() : (
                         <Text size="sm">{msg.text}</Text>
                       )}
                     </div>
@@ -383,11 +519,28 @@ const ChatBot = ({ form, onApplyDraft }: ChatBotProps = {}) => {
                     {msg.sender === "ai" && msg.eventDraft && (
                       <EventDraftPreview
                         draft={msg.eventDraft}
-                        onApply={
-                          form || onApplyDraft
-                            ? () => handleApplyDraft(msg.eventDraft!)
-                            : undefined
-                        }
+                        onApply={() => {
+                          if (isFullScreen) {
+                            setIsFullScreen(false);
+                          }
+                          if (onApplyDraft) {
+                            onApplyDraft(msg.eventDraft!);
+                          } else {
+                            if (pathname === "/events/create") {
+                              window.dispatchEvent(
+                                new CustomEvent("apply_event_draft", {
+                                  detail: msg.eventDraft,
+                                }),
+                              );
+                            } else {
+                              sessionStorage.setItem(
+                                "pending_event_draft",
+                                JSON.stringify(msg.eventDraft),
+                              );
+                              router.push("/events/create");
+                            }
+                          }
+                        }}
                       />
                     )}
                   </div>

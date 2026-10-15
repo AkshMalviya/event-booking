@@ -28,7 +28,9 @@ export class SaveChatInterceptor implements NestInterceptor {
           return;
         }
 
-        const timestamp = new Date();
+        const now = Date.now();
+        const userTimestamp = new Date(now);
+        const assistantTimestamp = new Date(now + 10);
         const userId =
           input.userId && mongoose.Types.ObjectId.isValid(input.userId)
             ? new mongoose.Types.ObjectId(input.userId)
@@ -40,7 +42,7 @@ export class SaveChatInterceptor implements NestInterceptor {
             content: input.message,
             userId,
             conversationId,
-            timestamp,
+            timestamp: userTimestamp,
             draftedEvent: null,
           },
           {
@@ -48,7 +50,7 @@ export class SaveChatInterceptor implements NestInterceptor {
             content: response.reply,
             userId,
             conversationId,
-            timestamp,
+            timestamp: assistantTimestamp,
             draftedEvent: response.eventDraft ?? null,
           },
         ];

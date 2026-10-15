@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -19,14 +21,25 @@ import {
   EventQueryDto,
   SortOrder,
 } from '@app/contracts/events/event-query.dto';
+import { ClientKafka } from '@nestjs/microservices';
+import { firstValueFrom, timeout } from 'rxjs';
+import { AI_PATTERNS } from '@app/contracts/ai/at.pattern';
+import { EVENT_PATTERNS } from '@app/contracts/events/event.patterns';
 
 @Injectable()
-export class EventsService {
+export class EventsService implements OnModuleInit {
   constructor(
     @InjectModel(Event.name)
     private readonly eventModel: Model<EventDocument>,
     private readonly paginationService: PaginationService,
+    @Inject('AI_SERVICE')
+    private readonly aiClient: ClientKafka,
   ) {}
+
+  async onModuleInit() {
+    this.aiClient.subscribeToResponseOf(AI_PATTERNS.SEARCH_SIMILAR_EVENTS);
+    await this.aiClient.connect();
+  }
 
   private async generateUniqueSlug(title: string): Promise<string> {
     const baseSlug =
@@ -54,7 +67,10 @@ export class EventsService {
     }
 
     if (idempotencyKey) {
-      const existingEvent = await this.eventModel.findOne({ idempotencyKey, userId });
+      const existingEvent = await this.eventModel.findOne({
+        idempotencyKey,
+        userId,
+      });
       if (existingEvent) {
         return existingEvent;
       }
@@ -74,12 +90,12 @@ export class EventsService {
     const slug = await this.generateUniqueSlug(data.title);
 
     try {
-      return await this.eventModel.create({
+      const newEvent = await this.eventModel.create({
         title: data.title,
         description: data.description,
         availableSeats: data.availableSeats,
         price: data.price,
-        image: data.image,
+        image: data.image as string,
         tags: data.tags ?? [],
         userId,
         slug,
@@ -88,8 +104,21 @@ export class EventsService {
         registeredCount: 0,
         idempotencyKey,
       });
+
+      this.aiClient.emit(EVENT_PATTERNS.EVENT_CREATED, {
+        id: newEvent._id.toString(),
+        title: newEvent.title,
+        description: newEvent.description,
+        tags: newEvent.tags,
+        slug: newEvent.slug,
+        startDate: newEvent.startDate,
+        endDate: newEvent.endDate,
+        price: newEvent.price,
+      });
+
+      return newEvent;
     } catch (error: any) {
-      if (error.code === 11000 && error.keyPattern && error.keyPattern.idempotencyKey) {
+      if (error.code === 11000 && error.keyPattern?.idempotencyKey) {
         return this.eventModel.findOne({ idempotencyKey, userId });
       }
       throw error;
@@ -150,58 +179,95 @@ export class EventsService {
     if (data.availableSeats !== undefined)
       event.availableSeats = data.availableSeats;
     if (data.tags !== undefined) event.tags = data.tags;
-    if (data.image !== undefined) event.image = data.image;
+    if (data.image !== undefined) event.image = data.image as string;
 
     return event.save();
   }
 
-  findAll(query: EventQueryDto = {}) {
+  async findAll(query: EventQueryDto = {}) {
     const { page, limit, search, isFree, sortBy, sortOrder, timeline } = query;
 
-    const matchStage: QueryFilter<Event> = {};
+    // 1. Base filter conditions (timeline & price)
+    const baseMatch: QueryFilter<Event> = {};
 
     if (timeline) {
       const now = new Date();
       if (timeline === 'upcoming') {
-        matchStage.startDate = { $gt: now };
+        baseMatch.startDate = { $gt: now };
       } else if (timeline === 'past') {
-        matchStage.endDate = { $lt: now };
+        baseMatch.endDate = { $lt: now };
       } else if (timeline === 'ongoing') {
-        matchStage.startDate = { $lte: now };
-        matchStage.endDate = { $gte: now };
+        baseMatch.startDate = { $lte: now };
+        baseMatch.endDate = { $gte: now };
       }
-    }
-
-    if (search) {
-      matchStage.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $regex: search, $options: 'i' } },
-      ];
     }
 
     if (isFree !== undefined) {
-      if (isFree) {
-        matchStage.price = 0;
-      } else {
-        matchStage.price = { $gt: 0 };
+      baseMatch.price = isFree ? 0 : { $gt: 0 };
+    }
+
+    // Helper to run query with base filters + optional search match
+    const executeQuery = (searchMatch?: QueryFilter<Event>) => {
+      const matchStage: QueryFilter<Event> = { ...baseMatch, ...searchMatch };
+      const aggregation: PipelineStage[] = [];
+
+      if (Object.keys(matchStage).length > 0) {
+        aggregation.push({ $match: matchStage });
       }
+
+      const sortField = sortBy || 'startDate';
+      const order = sortOrder === SortOrder.DESC ? -1 : 1;
+      aggregation.push({ $sort: { [sortField]: order } });
+
+      return this.paginationService.aggregate({
+        model: this.eventModel,
+        aggregation,
+        page,
+        limit,
+      });
+    };
+
+    // If no search term provided, run base query directly
+    if (!search?.trim()) {
+      return executeQuery();
     }
 
-    const aggregation: PipelineStage[] = [];
-    if (Object.keys(matchStage).length > 0) {
-      aggregation.push({ $match: matchStage });
+    // 2. Try AI Vector Search first
+    try {
+      const matchedIds: string[] = await firstValueFrom(
+        this.aiClient
+          .send(AI_PATTERNS.SEARCH_SIMILAR_EVENTS, {
+            query: search,
+            limit: Math.max(Number(limit || 10) * 5, 25),
+          })
+          .pipe(timeout(3000)),
+      );
+
+      const vectorObjectIds = (matchedIds || [])
+        .filter((id) => isValidObjectId(id))
+        .map((id) => new Types.ObjectId(id));
+
+      if (vectorObjectIds.length > 0) {
+        const vectorResult = await executeQuery({
+          _id: { $in: vectorObjectIds },
+        });
+
+        // Return vector results if any events matched the base filters
+        if (vectorResult.meta.total > 0) {
+          return vectorResult;
+        }
+      }
+    } catch (err) {
+      console.warn(
+        'Vector search failed, falling back to MongoDB regex:',
+        (err as Error).message,
+      );
     }
 
-    let sortField = sortBy || 'startDate';
-    const order = sortOrder === SortOrder.DESC ? -1 : 1;
-    aggregation.push({ $sort: { [sortField]: order } });
-
-    return this.paginationService.aggregate({
-      model: this.eventModel,
-      aggregation,
-      page,
-      limit,
+    // 3. Fallback: If vector search found nothing, search using MongoDB regex
+    const regex = { $regex: search, $options: 'i' };
+    return executeQuery({
+      $or: [{ title: regex }, { description: regex }, { tags: regex }],
     });
   }
 

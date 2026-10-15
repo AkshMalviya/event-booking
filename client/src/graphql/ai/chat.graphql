@@ -11,6 +11,7 @@ mutation Chat($input: ChatDto!) {
       endDate
       price
       tags
+      imageUrl
     }
   }
 }

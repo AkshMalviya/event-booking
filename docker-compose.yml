@@ -71,6 +71,19 @@ services:
     depends_on:
       - redis
 
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      IS_PERSISTENT: "TRUE"
+    volumes:
+      - chroma_data:/data
+    networks:
+      - app_network
+
   # mongo:
   #   image: mongo:7.0
   #   container_name: mongo
@@ -122,3 +135,4 @@ volumes:
   mongo_data:
   redis_data:
   redisinsight_data:
+  chroma_data:

@@ -1,13 +1,6 @@
 "use client";
-import {
-  ActionIcon,
-  Affix,
-  AppShell,
-  NavLink,
-  Stack,
-  Transition,
-} from "@mantine/core";
-import { useDisclosure, useWindowScroll } from "@mantine/hooks";
+import { AppShell, NavLink, Stack } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
@@ -15,12 +8,11 @@ import { FiCalendar } from "react-icons/fi";
 import { HiOutlineTicket } from "react-icons/hi2";
 import { MdEvent } from "react-icons/md";
 import Header from "./header/Header";
-import { FaArrowUpLong } from "react-icons/fa6";
+import ChatBot from "@/components/chatbot/ChatBot";
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
   const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
-  const [scroll, scrollTo] = useWindowScroll();
 
   const navItems = [
     {
@@ -90,19 +82,7 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
 
       <AppShell.Main>
         {children}
-        {/* <Affix position={{ bottom: 20, right: 20 }}>
-          <Transition transition="slide-up" mounted={scroll.y > 0}>
-            {(transitionStyles) => (
-              <ActionIcon
-                size={"input-md"}
-                style={transitionStyles}
-                onClick={() => scrollTo({ y: 0 })}
-              >
-                <FaArrowUpLong size={16} />
-              </ActionIcon>
-            )}
-          </Transition>
-        </Affix> */}
+        <ChatBot />
       </AppShell.Main>
     </AppShell>
   );

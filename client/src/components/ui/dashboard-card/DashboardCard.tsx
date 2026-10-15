@@ -13,16 +13,21 @@ import React, { memo } from "react";
 import { FiArrowRight, FiCalendar } from "react-icons/fi";
 import { EventEntity } from "@/generated/graphql";
 import { getImageUrl } from "@/utils/getImagePath";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface IProps {
   event: EventEntity;
-  onViewClick: () => void;
+  link: string;
 }
 
-const DashboardCard = ({ event, onViewClick }: IProps) => {
+const DashboardCard = ({ event, link }: IProps) => {
+  const router = useRouter();
   const seatsLeft = event.availableSeats - (event.registeredCount || 0);
   const imageUrl = getImageUrl(event.image ?? "");
-
+  const onViewClick = () => {
+    router.push(link);
+  };
   return (
     <Card
       key={event.id}
@@ -144,7 +149,8 @@ const DashboardCard = ({ event, onViewClick }: IProps) => {
           radius="md"
           variant="light"
           rightSection={<FiArrowRight size={14} />}
-          onClick={onViewClick}
+          component={Link}
+          href={link}
         >
           View Details
         </Button>
