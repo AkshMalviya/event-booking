@@ -74,29 +74,7 @@ export const GENERATE_EVENT_IMAGE_TOOL: ChatCompletionTool = {
   },
 };
 
-export const SEARCH_EVENTS_TOOL: ChatCompletionTool = {
-  type: 'function',
-  function: {
-    name: 'search_events',
-    description:
-      'Search and list existing events stored in the system using ChromaDB vector embeddings. Call this when the user asks to find, list, show, suggest, or recommend existing events based on a topic (e.g. "give me all events based on ai", "suggest AI events", "find tech events", "what music events do we have?").',
-    parameters: {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description:
-            'The semantic search query to match against ChromaDB vector embeddings (e.g. "ai", "artificial intelligence", "coding workshop", "music concert")',
-        },
-      },
-      required: ['query'],
-      additionalProperties: false,
-    },
-  },
-};
-
 export const CHAT_TOOLS: ChatCompletionTool[] = [
   CREATE_EVENT_DRAFT_TOOL,
   GENERATE_EVENT_IMAGE_TOOL,
-  SEARCH_EVENTS_TOOL,
 ];

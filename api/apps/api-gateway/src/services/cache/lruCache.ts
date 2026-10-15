@@ -39,10 +39,3 @@ class LRUCache {
     this.cache.set(key, value);
   }
 }
-
-const cache = new LRUCache(2);
-cache.put('a', 1);
-cache.put('b', 2);
-console.log(cache.get('a'));
-cache.put('c', 3);
-console.log(cache.get('c'));

@@ -33,25 +33,24 @@ class RateLimiter {
 
     let diff = now - counterDetail.lastCallAt;
 
-    console.log(`[RateLimiter] IP: ${currentIp} | Counter: ${counterDetail.currentCounter} | Diff: ${diff}ms`);
-
     if (
       diff < this.timeInterval &&
       counterDetail.currentCounter >= this.numberOfRequest
     ) {
       console.log(`[RateLimiter] ❌ Blocked request from ${currentIp}`);
-      throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException(
+        'Too many requests',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     // window expired
     if (diff >= this.timeInterval) {
-      console.log(`[RateLimiter] 🔄 Window expired, resetting counter for ${currentIp}`);
       this.reqCounter.set(currentIp, {
         lastCallAt: Date.now(),
         currentCounter: 1,
       });
     } else {
-      console.log(`[RateLimiter] ✅ Allowed request from ${currentIp}, increasing counter`);
       this.reqCounter.set(currentIp, {
         lastCallAt: Date.now(),
         currentCounter: counterDetail.currentCounter + 1,

@@ -15,7 +15,7 @@ import {
   EventQueryDto,
   EventTimeline,
 } from '@app/contracts/events/event-query.dto';
-import { firstValueFrom, timeout } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ChromaService implements OnModuleInit {
@@ -56,9 +56,6 @@ export class ChromaService implements OnModuleInit {
       console.error('Embedding Model failed:', e);
     }
     await this.eventClient.connect();
-
-    // Index existing events into ChromaDB on startup
-    void this.addEventIndex();
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
@@ -97,13 +94,6 @@ export class ChromaService implements OnModuleInit {
       metadatas: [
         {
           title: event.title ?? 'New Event',
-          slug: (event as any).slug ?? '',
-          description: ((event as any).description ?? '').slice(0, 300),
-          price: Number((event as any).price ?? 0),
-          startDate: (event as any).startDate
-            ? String((event as any).startDate)
-            : '',
-          endDate: (event as any).endDate ? String((event as any).endDate) : '',
         },
       ],
     });
@@ -111,35 +101,24 @@ export class ChromaService implements OnModuleInit {
   }
 
   async addEventIndex() {
-    try {
-      const allEvents: PaginatedEvents = await firstValueFrom(
-        this.eventClient
-          .send(EVENT_PATTERNS.FIND_ALL, {
-            limit: 100,
-          } as EventQueryDto)
-          .pipe(timeout(5000)),
-      );
+    const onGoingEvent: PaginatedEvents = await firstValueFrom(
+      this.eventClient.send(EVENT_PATTERNS.FIND_ALL, {
+        limit: 10,
+        timeline: EventTimeline.ONGOING,
+      } as EventQueryDto),
+    );
 
-      if (!allEvents?.data?.length) {
-        console.log('No events found to index');
-        return [];
-      }
-
-      const result = await Promise.all(
-        allEvents.data.map((e) =>
-          this.addEvent(e.id || (e as any)._id?.toString(), e),
-        ),
-      );
-
-      console.log(`Successfully indexed ${result.length} events into ChromaDB`);
-      return result;
-    } catch (err) {
-      console.warn(
-        'Failed to index events in ChromaDB:',
-        (err as Error).message,
-      );
+    if (!onGoingEvent?.data?.length) {
       return [];
     }
+
+    const result = await Promise.all(
+      onGoingEvent.data.map((e) =>
+        this.addEvent(e.id || (e as any)._id?.toString(), e),
+      ),
+    );
+
+    return result;
   }
 
   async searchSimilarEvents(query: string, limit = 10): Promise<string[]> {
@@ -159,11 +138,11 @@ export class ChromaService implements OnModuleInit {
       const ids = results.ids?.[0] || [];
       const distances = results.distances?.[0] || [];
 
-      const DISTANCE_THRESHOLD = 1.5;
+      const DISTANCE_THRESHOLD = 1.3;
 
       const matchedIds = ids.filter((_, idx) => {
         const dist = distances[idx];
-        return dist !== undefined && dist <= DISTANCE_THRESHOLD;
+        return dist !== undefined && dist && dist <= DISTANCE_THRESHOLD;
       });
 
       return matchedIds;
@@ -171,105 +150,5 @@ export class ChromaService implements OnModuleInit {
       console.error('Vector search failed in Chroma:', error);
       return [];
     }
-  }
-
-  async searchEventsDetailed(query: string, limit = 5): Promise<any[]> {
-    if (!query?.trim()) {
-      return [];
-    }
-
-    try {
-      const collection = await this.getEventsCollection();
-      const embedding = await this.generateEmbedding(query);
-
-      const results = await collection.query({
-        queryEmbeddings: [embedding],
-        nResults: limit,
-      });
-
-      const ids = results.ids?.[0] || [];
-      const metadatas = results.metadatas?.[0] || [];
-      const distances = results.distances?.[0] || [];
-
-      const matchedEvents: any[] = [];
-
-      for (let i = 0; i < ids.length; i++) {
-        const id = ids[i];
-        const dist = distances[i];
-        if (dist !== undefined && dist > 1.5) {
-          continue;
-        }
-
-        try {
-          const fullEvent: any = await firstValueFrom(
-            this.eventClient
-              .send(EVENT_PATTERNS.FIND_ONE, { eventId: id })
-              .pipe(timeout(2500)),
-          );
-          if (fullEvent) {
-            matchedEvents.push({
-              id: fullEvent.id || fullEvent._id?.toString() || id,
-              title: fullEvent.title,
-              slug: fullEvent.slug || id,
-              description: fullEvent.description,
-              startDate: fullEvent.startDate,
-              endDate: fullEvent.endDate,
-              price: fullEvent.price,
-              availableSeats: fullEvent.availableSeats,
-              tags: fullEvent.tags,
-            });
-            continue;
-          }
-        } catch {
-          // If FIND_ONE fails or times out, fall back to metadata
-        }
-
-        const meta: any = metadatas[i] || {};
-        matchedEvents.push({
-          id,
-          title: meta.title || 'Event',
-          slug: meta.slug || id,
-          description: meta.description || '',
-          startDate: meta.startDate || '',
-          endDate: meta.endDate || '',
-          price: Number(meta.price || 0),
-        });
-      }
-
-      if (matchedEvents.length > 0) {
-        return matchedEvents;
-      }
-    } catch (err) {
-      console.warn('Chroma vector search error:', err);
-    }
-
-    // Fallback: Query EVENT_SERVICE directly with search query
-    try {
-      const res: PaginatedEvents = await firstValueFrom(
-        this.eventClient
-          .send(EVENT_PATTERNS.FIND_ALL, {
-            search: query,
-            limit,
-          } as EventQueryDto)
-          .pipe(timeout(3000)),
-      );
-      if (res?.data?.length) {
-        return res.data.map((e) => ({
-          id: e.id || (e as any)._id?.toString(),
-          title: e.title,
-          slug: e.slug || e.id,
-          description: e.description,
-          startDate: e.startDate,
-          endDate: e.endDate,
-          price: e.price,
-          availableSeats: e.availableSeats,
-          tags: e.tags,
-        }));
-      }
-    } catch (fallbackErr) {
-      console.warn('Fallback event search error:', fallbackErr);
-    }
-
-    return [];
   }
 }

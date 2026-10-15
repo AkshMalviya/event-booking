@@ -30,11 +30,9 @@ import {
 } from "react-icons/ri";
 import { marked } from "marked";
 import EventDraftPreview from "./EventDraftPreview";
-import EventSuggestionCard from "./EventSuggestionCard";
 import ChatHistory from "./ChatHistory";
 import classes from "./ChatBot.module.scss";
-import { useRouter, usePathname } from "next/navigation";
-import { parseEventSuggestions } from "@/utils/eventMessageParser";
+import { useRouter } from "next/navigation";
 
 type Message = {
   id: string;
@@ -51,8 +49,6 @@ type ConversationMessage =
   ConversationMessagesQuery["conversationMessages"]["messages"][number];
 
 const ChatBot = ({ onApplyDraft }: ChatBotProps = {}) => {
-  const router = useRouter();
-  const pathname = usePathname();
   const [opened, setOpened] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -87,23 +83,6 @@ const ChatBot = ({ onApplyDraft }: ChatBotProps = {}) => {
       }
     }
   }, [messages, loading, opened, showHistory, loadingConversation]);
-
-  const handleMarkdownClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const target = (e.target as HTMLElement).closest("a");
-      if (target) {
-        const href = target.getAttribute("href");
-        if (href && href.startsWith("/")) {
-          e.preventDefault();
-          if (isFullScreen) {
-            setIsFullScreen(false);
-          }
-          router.push(href);
-        }
-      }
-    },
-    [router, isFullScreen],
-  );
 
   const mapToMessage = (m: ConversationMessage | ChatMessageItem): Message => ({
     id: m._id ?? `${m.role}-${m.timestamp || Date.now()}`,
@@ -481,37 +460,14 @@ const ChatBot = ({ onApplyDraft }: ChatBotProps = {}) => {
                           : classes.aiBubble
                       }`}
                     >
-                      {msg.sender === "ai" ? (() => {
-                        const { headline, events } = parseEventSuggestions(msg.text);
-                        return (
-                          <>
-                            {headline && (
-                              <div
-                                className={classes.markdownContent}
-                                onClick={handleMarkdownClick}
-                                dangerouslySetInnerHTML={{
-                                  __html: marked.parse(headline) as string,
-                                }}
-                              />
-                            )}
-                            {events && events.length > 0 && (
-                              <div className={classes.suggestedEventsList}>
-                                {events.map((ev) => (
-                                  <EventSuggestionCard
-                                    key={ev.slug || ev.id}
-                                    event={ev}
-                                    onViewDetails={() => {
-                                      if (isFullScreen) {
-                                        setIsFullScreen(false);
-                                      }
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })() : (
+                      {msg.sender === "ai" ? (
+                        <div
+                          className={classes.markdownContent}
+                          dangerouslySetInnerHTML={{
+                            __html: marked.parse(msg.text) as string,
+                          }}
+                        />
+                      ) : (
                         <Text size="sm">{msg.text}</Text>
                       )}
                     </div>
@@ -519,28 +475,13 @@ const ChatBot = ({ onApplyDraft }: ChatBotProps = {}) => {
                     {msg.sender === "ai" && msg.eventDraft && (
                       <EventDraftPreview
                         draft={msg.eventDraft}
-                        onApply={() => {
-                          if (isFullScreen) {
-                            setIsFullScreen(false);
-                          }
-                          if (onApplyDraft) {
-                            onApplyDraft(msg.eventDraft!);
-                          } else {
-                            if (pathname === "/events/create") {
-                              window.dispatchEvent(
-                                new CustomEvent("apply_event_draft", {
-                                  detail: msg.eventDraft,
-                                }),
-                              );
-                            } else {
-                              sessionStorage.setItem(
-                                "pending_event_draft",
-                                JSON.stringify(msg.eventDraft),
-                              );
-                              router.push("/events/create");
-                            }
-                          }
-                        }}
+                        onApply={
+                          onApplyDraft
+                            ? () => {
+                                onApplyDraft(msg.eventDraft!);
+                              }
+                            : undefined
+                        }
                       />
                     )}
                   </div>

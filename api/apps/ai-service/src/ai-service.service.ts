@@ -14,7 +14,6 @@ import { getChatPrompt } from './prompts/chat.prompt';
 import { ChatHistory, ChatHistoryDocument } from './schema/chatHistory.schema';
 import { PaginationService } from '@app/common';
 import { ImageGenerationService } from './service/image-generation/image-generation.service';
-import { ChromaService } from './chroma/chroma.service';
 
 type TConversation = { role: 'user' | 'assistant'; content: string }[];
 
@@ -23,7 +22,6 @@ export class AiServiceService {
   constructor(
     private readonly redisService: RedisService,
     private readonly imageGenerationService: ImageGenerationService,
-    private readonly chromaService: ChromaService,
     @InjectModel(ChatHistory.name)
     private readonly chatsHistoryModel: Model<ChatHistoryDocument>,
     @InjectModel(Chats.name)
@@ -160,48 +158,6 @@ export class AiServiceService {
             trimmedMessage,
           ));
 
-      const isCreateRequest =
-        !isQuestionOrInquiry &&
-        !isImageRequest &&
-        /\b(create|plan|draft|schedule|host|organize|new event|make an event|setup an event|set up an event)\b/i.test(
-          trimmedMessage,
-        );
-
-      const isSearchRequest =
-        !isQuestionOrInquiry &&
-        !isNegativeImage &&
-        !isImageRequest &&
-        !isCreateRequest &&
-        (/\b(show me|list|find|search|suggest|recommend|display|browse|lookup|explore)\b.*\b(events?|workshops?|hackathons?|meetups?|conferences?)\b/i.test(
-          trimmedMessage,
-        ) ||
-          /\b(give me all events?|give me events?)\b/i.test(trimmedMessage) ||
-          /\b(what events?|any events?|all events?|upcoming events?|existing events?)\b/i.test(
-            trimmedMessage,
-          ) ||
-          (/\b(events?)\b.*\b(based on|related to|matching)\b/i.test(
-            trimmedMessage,
-          ) &&
-            !/\b(create|plan|draft|host|make)\b/i.test(trimmedMessage)));
-
-      let toolChoice: any = 'auto';
-      if (isImageRequest) {
-        toolChoice = {
-          type: 'function',
-          function: { name: 'generate_event_image' },
-        };
-      } else if (isCreateRequest) {
-        toolChoice = {
-          type: 'function',
-          function: { name: 'create_event_draft' },
-        };
-      } else if (isSearchRequest) {
-        toolChoice = {
-          type: 'function',
-          function: { name: 'search_events' },
-        };
-      }
-
       // 4. Generate the AI response
       const response = await openai.chat.completions.create({
         model: OPEN_AI_CONFIGS.LLM_MODEL,
@@ -214,7 +170,9 @@ export class AiServiceService {
           { role: 'user', content: data.message },
         ],
         tools: CHAT_TOOLS,
-        tool_choice: toolChoice,
+        tool_choice: isImageRequest
+          ? { type: 'function', function: { name: 'generate_event_image' } }
+          : 'auto',
       });
 
       const message = response.choices[0].message;
@@ -239,11 +197,6 @@ export class AiServiceService {
               currentDraft,
               data.userId,
               id,
-            );
-          } else if (toolCall.function.name === 'search_events') {
-            toolResponse = await this.handleSearchEventsToolCall(
-              toolCall.function.arguments,
-              data.message,
             );
           }
         }
@@ -527,47 +480,6 @@ export class AiServiceService {
     };
   }
 
-  private async handleSearchEventsToolCall(
-    toolCallArg: string,
-    rawUserMessage: string,
-  ): Promise<{ reply: string; eventDraft?: EventDraft | null }> {
-    let query = '';
-    try {
-      const parsed = JSON.parse(toolCallArg);
-      query = parsed.query || '';
-    } catch {
-      query = rawUserMessage;
-    }
-
-    if (!query) {
-      query = rawUserMessage;
-    }
-
-    const events = await this.chromaService.searchEventsDetailed(query, 5);
-
-    if (!events || events.length === 0) {
-      return {
-        reply: `I searched ChromaDB vector embeddings for **"${query}"**, but couldn't find any matching events in the database right now.\n\nWould you like me to help you create an event for it? Just describe your event!`,
-        eventDraft: null,
-      };
-    }
-
-    const eventsPayload = events.map((ev) => ({
-      id: ev.id,
-      title: ev.title,
-      slug: ev.slug || ev.id,
-      description: ev.description,
-      price: ev.price ?? 0,
-      availableSeats: ev.availableSeats,
-      startDate: ev.startDate,
-      endDate: ev.endDate,
-      tags: ev.tags ?? [],
-    }));
-
-    const reply = `Here are the top events based on **"${query}"** found:\n\n<!--EVENTS_DATA:${JSON.stringify(eventsPayload)}-->`;
-    return { reply, eventDraft: null };
-  }
-
   async getChatHistory(userId: string) {
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) return [];
     return this.chatsHistoryModel
@@ -696,7 +608,6 @@ export class AiServiceService {
       draftedEvent: doc.draftedEvent || null,
     }));
 
-    console.log('message', messages);
     return {
       messages,
       nextCursor,

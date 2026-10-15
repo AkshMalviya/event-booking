@@ -110,10 +110,6 @@ export class EventsService implements OnModuleInit {
         title: newEvent.title,
         description: newEvent.description,
         tags: newEvent.tags,
-        slug: newEvent.slug,
-        startDate: newEvent.startDate,
-        endDate: newEvent.endDate,
-        price: newEvent.price,
       });
 
       return newEvent;

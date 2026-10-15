@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Container,
   Paper,
@@ -40,6 +40,7 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import { RiSparkling2Fill } from "react-icons/ri";
+import ChatBot from "@/components/chatbot/ChatBot";
 import { applyDraftToForm } from "@/utils/draft.utils";
 
 type TSuggestion = {
@@ -146,37 +147,6 @@ export default function CreateEventPage() {
       color: "teal",
     });
   };
-
-  useEffect(() => {
-    const handleDraftEvent = (e: CustomEvent<EventDraft>) => {
-      if (e.detail) {
-        void handleApplyDraft(e.detail);
-      }
-    };
-
-    window.addEventListener(
-      "apply_event_draft" as any,
-      handleDraftEvent as any,
-    );
-
-    const pending = sessionStorage.getItem("pending_event_draft");
-    if (pending) {
-      try {
-        const parsed = JSON.parse(pending);
-        sessionStorage.removeItem("pending_event_draft");
-        void handleApplyDraft(parsed);
-      } catch (err) {
-        console.warn("Failed to apply pending draft:", err);
-      }
-    }
-
-    return () => {
-      window.removeEventListener(
-        "apply_event_draft" as any,
-        handleDraftEvent as any,
-      );
-    };
-  }, []);
 
   const handleSubmit = async (values: typeof form.values) => {
     if (!values.startDate || new Date(values.startDate) <= new Date()) {
@@ -522,6 +492,7 @@ export default function CreateEventPage() {
           </Stack>
         </Paper>
       </Container>
+      <ChatBot onApplyDraft={handleApplyDraft} />
     </>
   );
 }
