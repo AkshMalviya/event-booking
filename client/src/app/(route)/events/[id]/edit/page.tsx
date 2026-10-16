@@ -282,7 +282,7 @@ export default function EditEventPage() {
                   {...form.getInputProps("availableSeats")}
                 />
                 <NumberInput
-                  label="Ticket Price ($)"
+                  label="Ticket Price (INR)"
                   description="Price cannot be changed for an existing event."
                   disabled
                   leftSection={<FiDollarSign size={16} />}

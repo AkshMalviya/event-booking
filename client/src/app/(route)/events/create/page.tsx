@@ -485,7 +485,7 @@ export default function CreateEventPage() {
                   />
 
                   <NumberInput
-                    label="Price ($ USD)"
+                    label="Price (INR)"
                     min={0}
                     step={1}
                     leftSection={<FiDollarSign size={16} />}

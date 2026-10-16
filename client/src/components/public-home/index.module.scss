@@ -1,0 +1,152 @@
+.header {
+  display: flex;
+  margin: auto;
+  align-items: center;
+  justify-content: space-between;
+  width: 90%;
+  padding: 8px;
+  background-color: #d7d7da;
+}
+
+.logo {
+  background: radial-gradient(
+    circle,
+    rgba(63, 94, 251, 1) 0%,
+    rgba(252, 70, 107, 1) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.menus {
+  display: flex;
+  gap: 32px;
+}
+
+.menu {
+  font-weight: 600;
+}
+
+.active {
+  background: radial-gradient(
+    circle,
+    rgba(63, 94, 251, 1) 0%,
+    rgba(252, 70, 107, 1) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.getStartedBtn {
+  color: white;
+  background-color: #3f5efb;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 10px;
+}
+
+.heroSection {
+  height: calc(100dvh - 66px);
+  width: 90%;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 50% 50%;
+}
+
+.leftSection {
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+
+.heading {
+  font-size: 60px;
+  font-weight: 800;
+  color: white;
+  line-height: 74px;
+}
+
+.desc {
+  max-width: 75%;
+  color: wheat;
+}
+
+.discoverBtn {
+  color: white;
+  background-color: #3f5efb;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 10px;
+}
+.rightSection {
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.leftImgs,
+.rightImgs {
+  position: relative;
+  width: 200px;
+  height: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.imgContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding-bottom: 38px;
+  animation: imgAnimation 10s linear infinite;
+  will-change: transform;
+}
+
+.leftImgs .imgContainer:nth-child(1) {
+  animation-delay: -5s;
+}
+
+.leftImgs .imgContainer:nth-child(2) {
+  animation-delay: 0s;
+}
+
+.rightImgs .imgContainer:nth-child(1) {
+  animation-delay: -2.5s;
+}
+
+.rightImgs .imgContainer:nth-child(2) {
+  animation-delay: -7.5s;
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+@keyframes imgAnimation {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+.headerWrapper {
+  background-color: #2f2f56;
+}
